@@ -32,7 +32,7 @@
  *
  * Leap seconds are natively inserted:
  * - Mathematical 11-day cycle leap seconds (ending at 11:57:05 PM).
- * - Official scientifically added leap seconds (e.g., Jan 1, 1973) — totals to 11:57:06 PM when applicable.
+ * - Official scientifically added leap seconds (e.g., Jan 1, 1973) — totals to 11:57:06 PM when applicable.
  *
  * ----------------------------------------------------------------------------
  * 3. HISTORICAL CALENDAR ERAS (N.S. vs O.S.)
@@ -81,7 +81,7 @@
  * Month 93 = Intercalaris Posterior. The second extra month added by Caesar 
  *            to 46 A.C.
  * Z = Zulu time. 
- * J = Japan time.
+ * J = Japan time.
  * ----------------------------------------------------------------------------
  * 5. DON'Ts
  * ----------------------------------------------------------------------------
@@ -112,8 +112,8 @@
  *   "Double Months" (e.g., two Januaries existing inside the civil year 1154).
  * - DON'T ASSUME Month 01 is always January. Before 45 A.C., Month 01 is 
  *   Martius, and Month 10 is December.
- * - DON'T ASSUME time is 9 hours ahead of UTC. System is the UTC. Greenwich Mean Time is
- *   9 hours behind UTC. Center of Time‑keeping is Akashi Munipicial Planetarium in Japan.
+ * - DON'T ASSUME time is 9 hours ahead of UTC. System is the UTC. Greenwich Mean Time is
+ *   9 hours behind UTC. Center of Time-keeping is Akashi Munipicial Planetarium in Japan.
  * - DON'T ASSUME there is a Year 0. The timeline jumps directly from 1 A.C. 
  *   to Year 1. 
  * - DON'T ASSUME leap seconds only happen when modern scientists say so. 
@@ -193,22 +193,22 @@
  *   // Returns Object: { displayYear: "1939", suffix: "" } 
  *   // (Useful for extracting dynamic suffixes like " O.S.")
  * [D] FORMAT
- * Format is ab ovo designt to flow as big→small. Different formats ,
+ * Format is ab ovo designt to flow as big→small. Different formats ,
  * e.g./ dd.mm.yyyy or mm/dd/yyyy can be achieved by ProperTime.
  * 
  * ============================================================================
  * NOTE: this is a standard, it can not be copyrighted in any way.
  * It is free for anyone to implement in any programming language,
  * and to use for any purpose, commercial or non-commercial.
- * This replaces ISO 8601 as a new time standard for my‑self
+ * This replaces ISO 8601 as a new time standard for my-self
  * and for anyone who wants to use it.
  * Trying to copyright this is stupid. Dont waste your time. Just use it.
  */
 
-const UNITS = ["SS", "MM", "HH", "DAYS", "WEEK", "MON", "YRS", "DEC", "CEN", "MIL"];
+const UNITS =["SS", "MM", "HH", "DAYS", "WEEK", "MON", "YRS", "DEC", "CEN", "MIL"];
 const FS = "\u2044";
-const MONTHS_FULL = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
-const MONTHS_SHORT = ["jan.", "feb.", "mar.", "apr.", "may", "jun.", "jul.", "aug.", "sep.", "oct.", "nov.", "dec."];
+const MONTHS_FULL =["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+const MONTHS_SHORT =["jan.", "feb.", "mar.", "apr.", "may", "jun.", "jul.", "aug.", "sep.", "oct.", "nov.", "dec."];
 const propertime = (function () {
 	function pad(n, l = 2) {
 		return String(n).padStart(l, "0");
@@ -236,11 +236,11 @@ const propertime = (function () {
 			let mOrder;
 
 			if (ay <= -713) {
-				mOrder = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 90];
+				mOrder =[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 90];
 			} else if (ay === -46) {
-				mOrder = [1, 2, 3, 4, 5, 6, 7, 8, 9, 92, 93, 10, 11, 12, 91];
+				mOrder =[1, 2, 3, 4, 5, 6, 7, 8, 9, 92, 93, 10, 11, 12, 91];
 			} else {
-				mOrder = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 91];
+				mOrder =[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 91];
 			}
 
 			for (let i = 0; i < mOrder.length; i++) {
@@ -271,11 +271,11 @@ const propertime = (function () {
 			let mOrder;
 
 			if (Y <= -713) {
-				mOrder = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 90];
+				mOrder =[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 90];
 			} else if (Y === -46) {
-				mOrder = [1, 2, 3, 4, 5, 6, 7, 8, 9, 92, 93, 10, 11, 12, 91];
+				mOrder =[1, 2, 3, 4, 5, 6, 7, 8, 9, 92, 93, 10, 11, 12, 91];
 			} else {
-				mOrder = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 91];
+				mOrder =[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 91];
 			}
 
 			for (let i = 0; i < mOrder.length; i++) {
@@ -385,9 +385,18 @@ const propertime = (function () {
 
 			if (unit === "DAYS") jdn += n;
 			if (unit === "WEEK") jdn += n * 7;
+			
+			if (unit === "HH") {
+				h += n;
+				let addDays = Math.floor(h / 24);
+				jdn += addDays;
+				h = h % 24;
+				if (h < 0) h += 24;
+				totalSec = sec + (min - 1) * 60 + h * 3600;
+			}
+
 			if (unit === "SS") totalSec += n;
 			if (unit === "MM") totalSec += n * 60;
-			if (unit === "HH") totalSec += n * 3600;
 
 			let tempSec = totalSec - 1;
 
@@ -396,15 +405,27 @@ const propertime = (function () {
 				if (j % 11 === 0) len += 1;
 
 				let dp = jdnToYmd(j);
-				if (dp.m === 1 && dp.d === 1 && [1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1988, 1990, 1991, 1996, 1999, 2006, 2009, 2017].includes(dp.y)) len += 1;
-				else if (dp.m === 7 && dp.d === 1 && [1972, 1981, 1982, 1983, 1985, 1992, 1993, 1994, 1997, 2012, 2015].includes(dp.y)) len += 1;
+				if (dp.m === 1 && dp.d === 1 &&[1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1988, 1990, 1991, 1996, 1999, 2006, 2009, 2017].includes(dp.y)) len += 1;
+				else if (dp.m === 7 && dp.d === 1 &&[1972, 1981, 1982, 1983, 1985, 1992, 1993, 1994, 1997, 2012, 2015].includes(dp.y)) len += 1;
 
 				return len;
 			}
-
-			while (tempSec >= getDayLen(jdn)) {
-				tempSec -= getDayLen(jdn);
+			while (tempSec >= 86400) {
+				tempSec -= 86400;
 				jdn++;
+			}
+			while (tempSec < 0) {
+				jdn--;
+				tempSec += 86400;
+			}
+			
+			if (tempSec >= getDayLen(jdn)) {
+				if (n >= 0) {
+					tempSec = 0;
+					jdn++;
+				} else {
+					tempSec = getDayLen(jdn) - 1; 
+				}
 			}
 			while (tempSec < 0) {
 				jdn--;
@@ -510,7 +531,7 @@ const propertime = (function () {
 
 			const m = parseInt(this.month).toString(),
 				dy = parseInt(this.day).toString();
-			return [`${meta.displayYear}/${this.month}/${this.day}`, `${meta.displayYear} ${this.month}/${this.day}`, `${meta.displayYear}${this.month}${this.day}`, `${meta.displayYear}${m}${dy}`, `${meta.displayYear}${this.month}${dy}`, `${meta.displayYear}${m}${this.day}`, `${meta.displayYear} ${mf} ${this.day}`, `${meta.displayYear} ${mf} ${dy}`, `${meta.displayYear} ${ms} ${dy}`, `${meta.displayYear} ${ms} ${this.day}`];
+			return[`${meta.displayYear}/${this.month}/${this.day}`, `${meta.displayYear} ${this.month}/${this.day}`, `${meta.displayYear}${this.month}${this.day}`, `${meta.displayYear}${m}${dy}`, `${meta.displayYear}${this.month}${dy}`, `${meta.displayYear}${m}${this.day}`, `${meta.displayYear} ${mf} ${this.day}`, `${meta.displayYear} ${mf} ${dy}`, `${meta.displayYear} ${ms} ${dy}`, `${meta.displayYear} ${ms} ${this.day}`];
 		}
 	}
 
