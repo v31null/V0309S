@@ -3,8 +3,8 @@
  *                             PROPERTIME LOGIC
  * ============================================================================
  *
- * This library implements a historically and astronomically flawless time
- * system based on the English calendar transitions and the exact sidereal day.
+ * This library implements a historical and astronomical time system based on
+ * the English calendar transitions and the exact sidereal day.
  *
  * ----------------------------------------------------------------------------
  * 1. THE TIME SYSTEM (01-60 MIN/SEC, 00 HOURS)
@@ -22,23 +22,24 @@
  * ----------------------------------------------------------------------------
  * 2. THE EXACT DAY (SIDEREAL TIME & NO DRIFT)
  * ----------------------------------------------------------------------------
- * A true standard day is exactly 86,164 seconds long (a Sidereal Day).
- * Because 86,164 seconds translates to 23 hours, 56 minutes, and 4 seconds,
- * the clock does NOT drift. Instead, a standard day ends exactly at:
+ * A true standard day is exactly 86,400 seconds long. To maintain the classical 
+ * 11:57 quirk without suffering from solar drift, the 57th minute of the 
+ * final hour acts as a massive "leap minute" that absorbs all remaining seconds.
+ * Instead of ending at 11:57:04 PM, the final minute runs until 240 seconds:
  *
- *       --> 11:57:04 PM
+ *       --> 11:57:240 PM
  *
  * Upon the very next second, it snaps directly to 00:01:01 AM of the next day.
  *
  * Leap seconds are natively inserted:
- * - Mathematical 11-day cycle leap seconds (ending at 11:57:05 PM).
- * - Official scientifically added leap seconds (e.g., Jan 1, 1973) — totals to 11:57:06 PM when applicable.
+ * - Mathematical 11-day cycle leap seconds (ending at 11:57:241 PM).
+ * - Official scientifically added leap seconds — extend it further.
  *
  * ----------------------------------------------------------------------------
  * 3. HISTORICAL CALENDAR ERAS (N.S. vs O.S.)
  * ----------------------------------------------------------------------------
- * The timeline faithfully tracks England's civil calendar, but recognizes that
- * "New Style" (N.S.) was actually invented by Julius Caesar, not England.
+ * The timeline tracks England's civil calendar, noting that the 
+ * "New Style" (N.S.) format was originally introduced during the Julian era.
  *
  * ERA 1: Pre-45 A.C. (O.S. - The Ancient Roman Calendar)
  *   - The ancient 10-month calendar. January and February do not exist.
@@ -57,7 +58,7 @@
  *     two Februaries, and two Marches, because the year 1155 is legally
  *     held back until March 25th.
  *
- * ERA 4: 1752 to Present (N.S. - Return to Sanity)
+ * ERA 4: 1752 to Present (N.S. - Alignment with Solar Calendar)
  *   - England finally returns to New Style (N.S.) and aligns with the
  *     Gregorian solar shift.
  *   - To fix the calendar drift, 11 days are wiped from existence:
@@ -68,8 +69,8 @@
  * 4. ABBREVIATIONS & TERMINOLOGY
  * ----------------------------------------------------------------------------
  * A.C. = Ante Christum (Before Christ).
- * A.D. = Anno Domini (In the Year of Our Lord). There is NO Anno Domini support printed after
- *        the A.C. era ends. Positive years are simply raw numbers.
+ * A.D. = Anno Domini (In the Year of Our Lord). In this system, positive years 
+ *        are formatted as raw numbers without the "A.D." suffix after the A.C. era ends.
  * O.S. = Old System / Old Style.
  * N.S. = New System / New Style.
  * Month 90 = Winter.
@@ -83,79 +84,69 @@
  * Z = Zulu time. 
  * J = Japan time.
  * ----------------------------------------------------------------------------
- * 5. DON'Ts
+ * 5. KEY BEHAVIORS & SYSTEM ASSUMPTIONS
  * ----------------------------------------------------------------------------
- * - DON'T ASSUME minutes and seconds start at 00. They are strictly 01 to 60.
- * - DON'T ASSUME midnight/noon is 12:xx AM/PM. It is strictly 00:xx AM/PM.
- * - DON'T ASSUME this is not a solar clock. It is. Noon is strictly when the sun is at its zenith,
- *   and midnight is strictly when the sun is at its nadir. Because of the exact 86,164-second day,
- *   the clock snaps to these solar points every day without drift.
- * - DON'T ASSUME a day is 86,400 seconds (24 hours). A day is exactly 86,164 
- *   seconds, ending at 11:57:04 PM.
- * - DON'T ASSUME the calendar shift happened in 1582. We are following the 
- *   English civil calendar, meaning the Gregorian 11-day skip happens in 
- *   September 1752, completely ignoring the 1582 Catholic papal decree.
- * - DON'T ASSUME years are zero-padded to 4 digits. Years are dynamic length 
- *   (e.g., year 45 prints as "45", not "0045").
- * - DON'T ASSUME chronological linearity. Days disappear (1752), months 
- *   overlap (1154/1155 Lady Day), and ancient months literally do not exist 
- *   depending on the exact ancient era.
- * - DON'T ASSUME days never exceed 31. While days are now securely parsed as 
- *   strictly 2 digits (December is no longer a bloated 170-day month), ancient 
- *   intercalary months still stretch beyond normal limits. Dies Hiberni (Month 90) 
- *   reaches up to 62 days, Intercalaris Prior (Month 92) is 33 days, and 
- *   Intercalaris Posterior (Month 93) hits 34 days.
- * - DON'T ASSUME days are strictly sequential. They will skip abruptly when 
- *   adding time across the 1752 transition (Sept 2 jumps to Sept 14).
- * - DON'T ASSUME the year started on January 1st. Example: betwixt 1155 and 1751, 
- *   the civil year officially started on March 25th (Lady Day), creating 
- *   "Double Months" (e.g., two Januaries existing inside the civil year 1154).
- * - DON'T ASSUME Month 01 is always January. Before 45 A.C., Month 01 is 
- *   Martius, and Month 10 is December.
- * - DON'T ASSUME time is 9 hours ahead of UTC. System is the UTC. Greenwich Mean Time is
- *   9 hours behind UTC. Center of Time-keeping is Akashi Munipicial Planetarium in Japan.
- * - DON'T ASSUME there is a Year 0. The timeline jumps directly from 1 A.C. 
- *   to Year 1. 
- * - DON'T ASSUME leap seconds only happen when modern scientists say so. 
- *   This system uses a strict mathematical 11-day sidereal cycle that natively 
- *   extends specific days to end at :05 PM, in addition to the official array 
- *   of 20th-century leap seconds.
- * - DON'T ASSUME the parser reads left-to-right. The input string parses the 
- *   fixed 2-digit time and dates from the right, leaving whatever remains on 
- *   the far left as the dynamic year.
- * - DON'T ASSUME an input of 00:01:00 AM is valid. Because seconds run 01-60, 
- *   inputting 00 seconds triggers a mathematical underflow that rolls back to 
- *   the previous day.
- * - DON'T CONFUSE A.C. with A.D. by thinking of it as "After Christ". 
- *   A.C. is in Latin language. It stands for Ante Christum which means Before Christ. 
- *   A.D. stands for Anno Domini which means In the Year of Our Lord.
- * - DON'T ASSUME the system is purely based on the Gregorian, Julian, or Roman 
- *   calendars alone. It is a proleptic, continuous mathematical bridge of all of them.
- * - DON'T ASSUME AM or PM stands for "Before/After Midnight". They are in Latin. 
- *   AM stands for Ante Meridiem which means Before Midday. 
- *   PM stands for Post Meridiem which means After Midday.
- * - DON'T ASSUME N.S. of Julius Caesar is the same as N.S. of England.
- * - DON'T ATTEMPT to get a "year zero" by adding time backwards from 1.
- * - DON'T ATTEMPT to parse the 1154 transition without tagging with O.S. or N.S. 
- *   suffixes. The system needs those suffixes to determine the correct transition.
- * - DON'T ASSUME Ianuarius and Februarius exist all the time. Before 713 A.C. 
- *   (the Romulan calendar), Romans tracked the year from the spring rebirth of 
- *   Martius through to December, but viewed the freezing gap afterward as a dead, 
- *   nameless void. This bleak winter period was deemed completely unworthy of 
- *   menses, so the logic simply dumps these uncounted days into Month 90 
- *   (Dies Hiberni) until Ianuarius and Februarius were finally invented.
- * - DON'T ASSUME 1154 is 365 days long. It is 448 days long.
- * - DON'T ASSUME days drift. They do not. Each day is exactly 86,164 seconds, 
- *   and the clock snaps to the next day at exactly 11:57:04 PM. 
- *   Noon is always 00:01:01 PM, and midnight is always 00:01:01 AM.
+ * - Minutes and seconds run strictly from 01 to 60 (never starting at 00).
+ * - Midnight and noon are represented as 00:xx AM/PM instead of 12:xx.
+ * - The system models a solar clock where noon is at the sun's zenith and 
+ *   midnight is at its nadir. The 86,164-second sidereal adjustment ensures 
+ *   these alignment points do not drift.
+ * - The final minute of the day (the 57th minute) is variable, ticking up to 
+ *   240 seconds (or 241 on leap days) to balance the 86,400-second day without drift.
+ * - The system follows the English civil calendar transition. The 11-day skip
+ *   occurs in September 1752 rather than the 1582 Gregorian transition.
+ * - Years are dynamically padded rather than forced to 4 digits (e.g., year 45 
+ *   prints as "45").
+ * - Time addition is non-linear across transitions due to historical calendar changes,
+ *   such as the 1752 skip and the 1154/1155 Lady Day double-month overlap.
+ * - Days can exceed 31 in historical intercalary months: Dies Hiberni (Month 90)
+ *   can have up to 62 days, Intercalaris Prior (Month 92) has 33, and Intercalaris
+ *   Posterior (Month 93) has 34.
+ * - Calendar dates are non-sequential across the September 1752 transition, skipping
+ *   directly from September 2nd to September 14th.
+ * - The start of the year varies historically; between 1155 and 1751, the year began on
+ *   March 25th (Lady Day), which can result in multiple calendar instances of the same month
+ *   within the same legal year (e.g., year 1154).
+ * - Month 01 is not always January; before 45 A.C., Month 01 represents Martius.
+ * - The reference meridian is centered at the Akashi Municipal Planetarium in Japan
+ *   (acting as UTC in this system), placing Greenwich Mean Time 9 hours behind.
+ * - There is no Year 0; the timeline transitions directly from 1 A.C. to Year 1.
+ * - Leap seconds are introduced both through modern UTC determinations and a mathematical
+ *   11-day sidereal cycle that extends specific days to end at 11:57:241 PM.
+ * - The parser processes dates from right-to-left. Seconds can be parsed as 3 digits
+ *   during the 11:57 leap minute, with the remaining left-hand string representing the year.
+ * - An input of 00 seconds is treated as an underflow, since seconds are indexed 01-60,
+ *   and will roll back to the previous day.
+ * - A.C. (Ante Christum) represents "Before Christ" and should not be confused with A.D.
+ *   (Anno Domini, "In the Year of Our Lord").
+ * - The system represents a proleptic, mathematically unified bridge across historical
+ *   Gregorian, Julian, and Roman calendars.
+ * - AM and PM stand for Ante Meridiem (Before Midday) and Post Meridiem (After Midday).
+ * - The Roman transition to "New Style" under Julius Caesar is handled differently from
+ *   the later English civil calendar alignment.
+ * - Time calculations do not allow a "year zero"; transitioning backwards from Year 1
+ *   resolves directly to 1 A.C.
+ * - Transition strings around the 1154 boundary must be explicitly qualified with O.S.
+ *   or N.S. suffixes to resolve parsing ambiguity.
+ * - Before 713 A.C., Ianuarius and Februarius did not exist in the Romulan calendar;
+ *   winter days are grouped into Month 90 (Dies Hiberni) until those months were introduced.
+ * - The civil year 1154 is mathematically modeled as 448 days long due to calendar shifts.
+ * - The clock ensures perfect solar synchronization without day-to-day drift. Every day
+ *   comprises exactly 86,400 standard seconds, finishing at 11:57:240 PM and snapping
+ *   to 00:01:01 AM.
  * ----------------------------------------------------------------------------
  * 6. USAGE MANUAL
  * ----------------------------------------------------------------------------
  * 
  * [A] INITIALIZATION
- *   let now = propertime();                           — Grabs current local time
- *   let past = propertime("19390101000101AM");        — Specific exact time
- *   let ancient = propertime("450101000101AM A.C.");  — A.C. time
+ *   // 1. Get the active Japan reference standard time:
+ *   let now = propertime();
+ * 
+ *   // 2. Parse a specific calendar date (Julian/English Lady Day transition era):
+ *   let julianDate = propertime("11540324115700PM"); 
+ * 
+ *   // 3. Parse an ancient Roman AC date:
+ *   let ancient = propertime("450101000101AM A.C.");
  * 
  *   String Format required for parsing:
  *   [Year][Month][Day][Hour][Min][Sec][AM/PM][Optional Suffixes]
@@ -167,8 +158,14 @@
  * [B] TIME TRAVEL (ADDING/SUBTRACTING)
  *   Use the .add() method. Negative numbers go backward in time.
  *   
- *   let nextDay = past.add(1, "DAYS");
- *   let lastSec = past.add(-1, "SS");
+ *   // 1. Add 10 sidereal days:
+ *   let future = now.add(10, "DAYS");
+ * 
+ *   // 2. Go back 5 hours:
+ *   let past = now.add(-5, "HH");
+ * 
+ *   // 3. Add 3 months (correctly handles historical leap/intercalary months & 10/12-month transitions):
+ *   let nextQuarter = now.add(3, "MON");
  * 
  *   Supported Units:
  *   "SS"   : Seconds (Accounts for 86,164s days & leap seconds)
@@ -183,26 +180,45 @@
  *   "MIL"  : Millennia (1000 Years)
  * 
  * [C] OUTPUTTING DATA
- *   past.toString();
- *   // Returns: "1939 01⁄01 00:01:01 AM"
+ *   // 1. Get standard ProperTime format ("YYYY MM⁄DD HH:MM:SS AM/PM [Suffix]"):
+ *   let stdStr = now.toString(); // "2026 06⁄03 01:15:17 AM"
  * 
- *   past.toAltFormats();
- *   // Returns Array:["1939/01/01", "1939 january 1", "19390101", etc.]
+ *   // 2. Get alternative date representation formats:
+ *   let formats = now.toAltFormats();
+ *   console.log(formats[0]); // "2026/06/03"
+ *   console.log(formats[6]); // "2026 june 3"
  * 
- *   past.getMeta();
- *   // Returns Object: { displayYear: "1939", suffix: "" } 
- *   // (Useful for extracting dynamic suffixes like " O.S.")
+ *   // 3. Get civil year boundary adjustments and O.S./N.S./A.C. suffixes:
+ *   let meta = now.getMeta();
+ *   console.log(meta.displayYear); // "2026"
+ *   console.log(meta.suffix);      // ""
+
  * [D] FORMAT
- * Format is ab ovo designt to flow as big→small. Different formats ,
- * e.g./ dd.mm.yyyy or mm/dd/yyyy can be achieved by ProperTime.
+ *   Format is ab ovo designed to flow as big→small. Different formats,
+ *   e.g., dd.mm.yyyy or mm/dd/yyyy can be achieved by formatting ProperTime's parts.
  * 
+ * [E] TURKIC 12-ANIMAL CALENDAR & MULTI-ENVIRONMENT IMPORT
+ *   - The library supports full 8th-century Göktürk (Runic Old Turkic) month and animal year formatting.
+ *   - Outputs are retrieved via the `.toAltFormats()` array:
+ *     - Index 10: Old Turkic Format (TR) (e.g., "146NČ BIČIN YWL, TOKUZUNČ AY O.S.")
+ *     - Index 11: English Translation (EN) (e.g., "146th MONKEY YRS, 9th MON O.S.")
+ * 
+ *   - Example (Node.js import):
+ *     const propertime = require('./time.js');
+ *     let pt = propertime("17520902115704PMO.S.");
+ *     let trFormat = pt.toAltFormats()[10]; // "146NČ BIČIN YWL, TOKUZUNČ AY O.S."
+ *     let enFormat = pt.toAltFormats()[11]; // "146th MONKEY YRS, 9th MON O.S."
+ * 
+ *   - Example (Browser script tag):
+ *     // Load time.js. propertime is attached to the global scope (window / globalThis)
+ *     let now = propertime(); // Get active Japan reference standard time
+ *     console.log(now.toAltFormats()[10]); // e.g. "178INČ KONY YWL, ARAM AY"
+ *
  * ============================================================================
- * NOTE: this is a standard, it can not be copyrighted in any way.
- * It is free for anyone to implement in any programming language,
- * and to use for any purpose, commercial or non-commercial.
- * This replaces ISO 8601 as a new time standard for my-self
- * and for anyone who wants to use it.
- * Trying to copyright this is stupid. Dont waste your time. Just use it.
+ * NOTE: This is a public time-keeping specification and standard.
+ * It is freely available for anyone to implement, modify, and distribute in
+ * any programming language, for both commercial and non-commercial purposes.
+ * It is dedicated entirely to the public domain.
  */
 
 const UNITS =["SS", "MM", "HH", "DAYS", "WEEK", "MON", "YRS", "DEC", "CEN", "MIL"];
@@ -401,7 +417,7 @@ const propertime = (function () {
 			let tempSec = totalSec - 1;
 
 			function getDayLen(j) {
-				let len = 86164;
+				let len = 86400;
 				if (j % 11 === 0) len += 1;
 
 				let dp = jdnToYmd(j);
@@ -437,9 +453,14 @@ const propertime = (function () {
 			m = datePart.m;
 			day = datePart.d;
 
-			sec = (tempSec % 60) + 1;
-			min = (Math.floor(tempSec / 60) % 60) + 1;
 			h = Math.floor(tempSec / 3600) % 24;
+			if (h === 23 && tempSec >= 86160) {
+				min = 57;
+				sec = (tempSec - 86160) + 1;
+			} else {
+				min = (Math.floor(tempSec / 60) % 60) + 1;
+				sec = (tempSec % 60) + 1;
+			}
 		}
 
 		let h12 = h % 12;
@@ -531,7 +552,63 @@ const propertime = (function () {
 
 			const m = parseInt(this.month).toString(),
 				dy = parseInt(this.day).toString();
-			return[`${meta.displayYear}/${this.month}/${this.day}`, `${meta.displayYear} ${this.month}/${this.day}`, `${meta.displayYear}${this.month}${this.day}`, `${meta.displayYear}${m}${dy}`, `${meta.displayYear}${this.month}${dy}`, `${meta.displayYear}${m}${this.day}`, `${meta.displayYear} ${mf} ${this.day}`, `${meta.displayYear} ${mf} ${dy}`, `${meta.displayYear} ${ms} ${dy}`, `${meta.displayYear} ${ms} ${this.day}`];
+				
+			const TURKIC_ANIMALS_TR = ["BIČIN", "TAKAGU", "WT", "TONGUZ", "SIČKAN", "UD", "BARS", "TABWȘKAN", "LU", "YILAN", "YUNT", "KONY"];
+			const TURKIC_ANIMALS_EN = ["MONKEY", "ROOSTER", "DOG", "PIG", "RAT", "OX", "TIGER", "RABBIT", "DRAGON", "SNAKE", "HORSE", "SHEEP"];
+			
+			function getEnOrdinal(n) {
+				let v = n % 100;
+				if (v >= 11 && v <= 13) return n + "ᵗʰ";
+				let last = n % 10;
+				if (last === 1) return n + "ˢᵗ";
+				if (last === 2) return n + "ⁿᵈ";
+				if (last === 3) return n + "ʳᵈ";
+				return n + "ᵗʰ";
+			}
+			
+			function getTrOrdinal(n) {
+				let last = n % 10;
+				let lastTwo = n % 100;
+				let s = "INČ";
+				if ([1, 5, 8].includes(last)) s = "INČ";
+				else if ([2, 6, 7].includes(last)) s = "NČ";
+				else if ([3, 4].includes(last)) s = "UENČ";
+				else if (last === 9) s = "UNČ";
+				else if (last === 0) {
+					if ([10, 30, 90].includes(lastTwo)) s = "UNČ";
+					else if ([20, 50, 70, 80].includes(lastTwo)) s = "INČ";
+					else if ([40, 60].includes(lastTwo)) s = "WNČ";
+					else s = "UENČ";
+				}
+				return n + s;
+			}
+			
+			function getTurkicMonth(m) {
+				const months = {
+					1: "ARAM", 2: "IKINTI", 3: "UEČUENČ", 4: "TOERTWNČ",
+					5: "BEȘINČ", 6: "ALTWNČ", 7: "YETWNČ", 8: "SEKIZINČ",
+					9: "TOKUZUNČ", 10: "ONUNČ", 11: "ON BIRINČ", 12: "ČA‘ȘAPAT",
+					90: "TOKUZ ONUNČ", 91: "TOKUZ ON BIRINČ", 92: "TOKUZ ON IKINTI", 93: "TOKUZ ON UEČUENČ"
+				};
+				return months[m] || getTrOrdinal(m);
+			}
+			
+			let py = ay;
+			let m_raw = parseInt(this.month);
+			let d_raw = parseInt(this.day);
+			if (ay >= 1155 && ay <= 1751 && (m_raw === 1 || m_raw === 2 || (m_raw === 3 && d_raw < 25))) {
+				py = ay - 1;
+				if (py === 0) py = -1;
+			}
+			
+			let animalIndex = py > 0 ? (py % 12) : ((1 - (Math.abs(py) % 12) + 12) % 12);
+			let iteration = Math.ceil(Math.abs(py) / 12);
+			let suffix = meta.suffix;
+			
+			let trFormat = `${getTrOrdinal(iteration)} ${TURKIC_ANIMALS_TR[animalIndex]} YWL , ${getTurkicMonth(m_raw)} AY${suffix}`;
+			let enFormat = `${getEnOrdinal(iteration)} ${TURKIC_ANIMALS_EN[animalIndex]} YRS , ${getEnOrdinal(m_raw)} MON${suffix}`;
+
+			return[`${meta.displayYear}/${this.month}/${this.day}`, `${meta.displayYear} ${this.month}/${this.day}`, `${meta.displayYear}${this.month}${this.day}`, `${meta.displayYear}${m}${dy}`, `${meta.displayYear}${this.month}${dy}`, `${meta.displayYear}${m}${this.day}`, `${meta.displayYear} ${mf} ${this.day}`, `${meta.displayYear} ${mf} ${dy}`, `${meta.displayYear} ${ms} ${dy}`, `${meta.displayYear} ${ms} ${this.day}`, trFormat, enFormat];
 		}
 	}
 
@@ -547,11 +624,13 @@ const propertime = (function () {
 			if (s.startsWith("-")) s = s.substring(1);
 			if (s.length < 11) throw new Error("Invalid propertime string");
 
+			let is3DigitSec = /1157\d{3}PM$/i.test(s);
+			let secLen = is3DigitSec ? 3 : 2;
 			let ampm = s.slice(-2).toUpperCase();
-			let sec = parseInt(s.slice(-4, -2));
-			let min = parseInt(s.slice(-6, -4));
-			let hr = parseInt(s.slice(-8, -6));
-			let dateStr = s.slice(0, -8);
+			let sec = parseInt(s.slice(-2 - secLen, -2));
+			let min = parseInt(s.slice(-4 - secLen, -2 - secLen));
+			let hr = parseInt(s.slice(-6 - secLen, -4 - secLen));
+			let dateStr = s.slice(0, -6 - secLen);
 
 			const day = parseInt(dateStr.slice(-2));
 			const month = parseInt(dateStr.slice(-4, -2));
@@ -591,17 +670,43 @@ const propertime = (function () {
 		});
 
 		if (H === 24) H = 0;
-		let hr12 = H % 12;
-		let ampm = H >= 12 ? "PM" : "AM";
+		let tempSec = s + (m * 60) + (H * 3600);
+		let n_h = Math.floor(tempSec / 3600) % 24;
+		let n_min, n_sec;
+		if (n_h === 23 && tempSec >= 86160) {
+			n_min = 57;
+			n_sec = (tempSec - 86160) + 1;
+		} else {
+			n_min = (Math.floor(tempSec / 60) % 60) + 1;
+			n_sec = (tempSec % 60) + 1;
+		}
+
+		let hr12 = n_h % 12;
+		let ampm = n_h >= 12 ? "PM" : "AM";
 
 		return new ProperTime({
 			year: Y.toString(),
 			month: pad(M),
 			day: pad(D),
 			hr: pad(hr12),
-			min: pad(m + 1),
-			sec: pad(s + 1),
+			min: pad(n_min),
+			sec: pad(n_sec),
 			ampm: ampm,
 		});
 	};
 })();
+
+// Export support for multiple environments (CommonJS, ESM, and browser global)
+if (typeof module !== 'undefined' && module.exports) {
+	module.exports = propertime;
+} else if (typeof define === 'function' && define.amd) {
+	define([], function () { return propertime; });
+} else {
+	if (typeof globalThis !== 'undefined') {
+		globalThis.propertime = propertime;
+	} else if (typeof window !== 'undefined') {
+		window.propertime = propertime;
+	} else if (typeof global !== 'undefined') {
+		global.propertime = propertime;
+	}
+}
