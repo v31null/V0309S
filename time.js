@@ -807,10 +807,10 @@ const propertime = (function () {
 			let iteration = Math.ceil(Math.abs(t_py) / 12);
 			let suffix = meta.suffix;
 			
-			let trFormat = `${getTrOrdinal(iteration)} ${TURKIC_ANIMALS_TR[animalIndex]} YWL , ${getTurkicMonth(t_m)} AY , ${getTrOrdinal(d_raw)} KUEN${suffix}`;
-			let enFormat = `${getEnOrdinal(iteration)} ${TURKIC_ANIMALS_EN[animalIndex]} YRS , ${getEnOrdinal(t_m)} MON , ${getEnOrdinal(d_raw)} DAY${suffix}`;
-
 			let timeSuffix = ` ${this.hr}:${this.min}:${this.sec} ${this.ampm}`;
+			
+			let trFormat = `${getTrOrdinal(iteration)} ${TURKIC_ANIMALS_TR[animalIndex]} YWL , ${getTurkicMonth(t_m)} AY , ${getTrOrdinal(d_raw)} KUEN${timeSuffix}${suffix}`;
+			let enFormat = `${getEnOrdinal(iteration)} ${TURKIC_ANIMALS_EN[animalIndex]} YRS , ${getEnOrdinal(t_m)} MON , ${getEnOrdinal(d_raw)} DAY${timeSuffix}${suffix}`;
 
 			let jdn = ymdToJdn(parseInt(this.year), parseInt(this.month), parseInt(this.day));
 			let eg = jdnToEgyptian(jdn);
