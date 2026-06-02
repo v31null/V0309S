@@ -593,20 +593,27 @@ const propertime = (function () {
 				return months[m] || getTrOrdinal(m);
 			}
 			
-			let py = ay;
 			let m_raw = parseInt(this.month);
 			let d_raw = parseInt(this.day);
-			if (ay >= 1155 && ay <= 1751 && (m_raw === 1 || m_raw === 2 || (m_raw === 3 && d_raw < 25))) {
-				py = ay - 1;
-				if (py === 0) py = -1;
+			
+			let t_py = ay;
+			let t_m = m_raw;
+
+			if (ay > -46) {
+				t_m = m_raw - 2;
+				if (t_m <= 0) {
+					t_m += 12;
+					t_py -= 1;
+					if (t_py === 0) t_py = -1;
+				}
 			}
 			
-			let animalIndex = py > 0 ? (py % 12) : ((1 - (Math.abs(py) % 12) + 12) % 12);
-			let iteration = Math.ceil(Math.abs(py) / 12);
+			let animalIndex = t_py > 0 ? (t_py % 12) : ((1 - (Math.abs(t_py) % 12) + 12) % 12);
+			let iteration = Math.ceil(Math.abs(t_py) / 12);
 			let suffix = meta.suffix;
 			
-			let trFormat = `${getTrOrdinal(iteration)} ${TURKIC_ANIMALS_TR[animalIndex]} YWL , ${getTurkicMonth(m_raw)} AY , ${getTrOrdinal(d_raw)} KUEN${suffix}`;
-			let enFormat = `${getEnOrdinal(iteration)} ${TURKIC_ANIMALS_EN[animalIndex]} YRS , ${getEnOrdinal(m_raw)} MON , ${getEnOrdinal(d_raw)} DAY${suffix}`;
+			let trFormat = `${getTrOrdinal(iteration)} ${TURKIC_ANIMALS_TR[animalIndex]} YWL , ${getTurkicMonth(t_m)} AY , ${getTrOrdinal(d_raw)} KUEN${suffix}`;
+			let enFormat = `${getEnOrdinal(iteration)} ${TURKIC_ANIMALS_EN[animalIndex]} YRS , ${getEnOrdinal(t_m)} MON , ${getEnOrdinal(d_raw)} DAYS${suffix}`;
 
 			return[`${meta.displayYear}/${this.month}/${this.day}`, `${meta.displayYear} ${this.month}/${this.day}`, `${meta.displayYear}${this.month}${this.day}`, `${meta.displayYear}${m}${dy}`, `${meta.displayYear}${this.month}${dy}`, `${meta.displayYear}${m}${this.day}`, `${meta.displayYear} ${mf} ${this.day}`, `${meta.displayYear} ${mf} ${dy}`, `${meta.displayYear} ${ms} ${dy}`, `${meta.displayYear} ${ms} ${this.day}`, trFormat, enFormat];
 		}
@@ -696,7 +703,6 @@ const propertime = (function () {
 	};
 })();
 
-// Export support for multiple environments (CommonJS, ESM, and browser global)
 if (typeof module !== 'undefined' && module.exports) {
 	module.exports = propertime;
 } else if (typeof define === 'function' && define.amd) {
