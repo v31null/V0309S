@@ -200,19 +200,19 @@
  * [E] TURKIC 12-ANIMAL CALENDAR & MULTI-ENVIRONMENT IMPORT
  *   - The library supports full 8th-century Göktürk (Runic Old Turkic) month and animal year formatting.
  *   - Outputs are retrieved via the `.toAltFormats()` array:
- *     - Index 10: Old Turkic Format (TR) (e.g., "146NČ BIČIN YWL, TOKUZUNČ AY O.S.")
- *     - Index 11: English Translation (EN) (e.g., "146th MONKEY YRS, 9th MON O.S.")
+ *     - Index 10: Old Turkic Format (TR) (e.g., "146NČ BIČIN YWL , TOKUZUNČ AY , 2NČ KUEN O.S.")
+ *     - Index 11: English Translation (EN) (e.g., "146ᵗʰ MONKEY YRS , 9ᵗʰ MON , 2ⁿᵈ DAY O.S.")
  * 
  *   - Example (Node.js import):
  *     const propertime = require('./time.js');
  *     let pt = propertime("17520902115704PMO.S.");
- *     let trFormat = pt.toAltFormats()[10]; // "146NČ BIČIN YWL, TOKUZUNČ AY O.S."
- *     let enFormat = pt.toAltFormats()[11]; // "146th MONKEY YRS, 9th MON O.S."
+ *     let trFormat = pt.toAltFormats()[10]; // "146NČ BIČIN YWL , TOKUZUNČ AY , 2NČ KUEN O.S."
+ *     let enFormat = pt.toAltFormats()[11]; // "146ᵗʰ MONKEY YRS , 9ᵗʰ MON , 2ⁿᵈ DAY O.S."
  * 
  *   - Example (Browser script tag):
  *     // Load time.js. propertime is attached to the global scope (window / globalThis)
  *     let now = propertime(); // Get active Japan reference standard time
- *     console.log(now.toAltFormats()[10]); // e.g. "178INČ KONY YWL, ARAM AY"
+ *     console.log(now.toAltFormats()[10]); // e.g. "178INČ KONY YWL , ARAM AY , 1INČ KUEN"
  *
  * ============================================================================
  * NOTE: This is a public time-keeping specification and standard.
@@ -605,8 +605,8 @@ const propertime = (function () {
 			let iteration = Math.ceil(Math.abs(py) / 12);
 			let suffix = meta.suffix;
 			
-			let trFormat = `${getTrOrdinal(iteration)} ${TURKIC_ANIMALS_TR[animalIndex]} YWL , ${getTurkicMonth(m_raw)} AY${suffix}`;
-			let enFormat = `${getEnOrdinal(iteration)} ${TURKIC_ANIMALS_EN[animalIndex]} YRS , ${getEnOrdinal(m_raw)} MON${suffix}`;
+			let trFormat = `${getTrOrdinal(iteration)} ${TURKIC_ANIMALS_TR[animalIndex]} YWL , ${getTurkicMonth(m_raw)} AY , ${getTrOrdinal(d_raw)} KUEN${suffix}`;
+			let enFormat = `${getEnOrdinal(iteration)} ${TURKIC_ANIMALS_EN[animalIndex]} YRS , ${getEnOrdinal(m_raw)} MON , ${getEnOrdinal(d_raw)} DAY${suffix}`;
 
 			return[`${meta.displayYear}/${this.month}/${this.day}`, `${meta.displayYear} ${this.month}/${this.day}`, `${meta.displayYear}${this.month}${this.day}`, `${meta.displayYear}${m}${dy}`, `${meta.displayYear}${this.month}${dy}`, `${meta.displayYear}${m}${this.day}`, `${meta.displayYear} ${mf} ${this.day}`, `${meta.displayYear} ${mf} ${dy}`, `${meta.displayYear} ${ms} ${dy}`, `${meta.displayYear} ${ms} ${this.day}`, trFormat, enFormat];
 		}
