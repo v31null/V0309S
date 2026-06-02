@@ -19,7 +19,8 @@
  * starts at 00.
  *
  * Example Start of Day: 00:01:01 AM
- * Example Noon Alignment: 11:59:60 AM (Strictly representing standard 12:00:00 PM)
+ * Example Noon Alignment: 11:60:60 AM (Strictly representing Non-standard 11:59:59 AM,
+ * leading into 00:01:01 PM)
  *
  * ----------------------------------------------------------------------------
  * 2. THE EXACT DAY (SIDEREAL TIME & NO DRIFT)
@@ -207,6 +208,50 @@
  * [D] FORMAT
  * Format is ab ovo designt to flow as big→small. Different formats ,
  * e.g./ dd.MIN.yyyy or MIN/dd/yyyy can be achieved by array indexing.
+ *
+ * [E] MUSTN'Ts & STRICT LIMITATIONS
+ *   1. [MUSTN'T EXPECT AUTO-DST]: Daylight saving is a political delusion.
+ * 	 If you want to participate in the delusion, you must manually signal the system by passing true.
+ * 	 Otherwise, we remain in JST purity, Japan Standard Time is the universal baseline of this
+ * 	 system and DOES NOT see DST. The engine will NEVER automatically shift the clock for daylight
+ * 	 saving. You MUST explicitly pass `true` to the `is_day_time_saving` parameter, or manually
+ * 	 script the addition/removal of hours using `off_set_japan`. 
+ *   2. [MUSTN'T USE '00' FOR MINUTES/SECONDS]: Unlike standard computer clocks (`00` to `59`),
+ * 	 our minutes and seconds strictly range from `01` to `60`. Do not attempt to parse or inject
+ * 	 a `00` minute/second into the string.
+ *   3. [MUSTN'T ASSUME 60-SECOND MINUTES]: While most minutes are 60 seconds, the daily
+ * 	 leap-minute at `11:57 PM` expands to up to 240/241 seconds to absorb the sidereal shift.
+ * 	 Do not assume 60 seconds is a hard ceiling.
+ *   4. [MUSTN'T LOOK FOR YEAR 0]: There is mathematically no Year 0. The calendar steps directly
+ * 	 from `1 A.C.` to `1 A.D.`. Mathematical additions across the BCE/CE boundary naturally skip zero.
+ *   5. [MUSTN'T FEED 24-HOUR STRINGS]: The parser mandates a 12-hour format string and always
+ * 	 requires an explicit `AM` or `PM` attached to the very end of the string.
+ * 	 We only speak in AM/PM, but you must do it my way.
+ *   6. [MUSTN'T USE '12' FOR NOON/MIDNIGHT]: The hours of `12 AM` and `12 PM` do not logically exist.
+ * 	 Hours represent *completed* units of time, meaning the first hour of a cycle strictly starts at `00`.
+ * 	 Standard `12:00:00` noon is mathematically mapped and aligned via `11:60:60`.
+ *   7. [MUSTN'T EXPECT LEFT-TO-RIGHT PARSING]: Because the year length is mathematically unbounded and dynamic
+ * 	 (stretching back to deep Stonehenge epochs), the timestamp string is parsed strictly right-to-left.
+ * 	 You must not assume fixed-length, zero-padded years like `YYYY`.
+ *   8. [MUSTN'T ASSUME UTC IS THE CENTER OF TIME]: The system defines JST (Akashi Municipal Planetarium)
+ * 	 as the universal chronological baseline. We do not add 9 hours to UTC, rather; Greenwich Mean Time is
+ * 	 considered 9 hours behind the true baseline.
+ *   9. [MUSTN'T ASSUME JANUARY IS MONTH 01]: Chronological history is not static. Before `45 A.C.`, Month 01
+ * 	 is strictly *Martius* (March). Before `713 A.C.`, January and February do not mathematically exist, and
+ * 	 winter is a nameless void dumped entirely into Month 90.
+ *   10. [MUSTN'T EXPECT THE 1582 GREGORIAN SHIFT]: We follow the English Lady Day shift and the subsequent
+ * 	 civil standard. The timeline wipes 11 days abruptly in September 1752. Do not attempt to map
+ * 	 the Catholic 1582 calendar corrections to this system.
+ *   11. [MUSTN'T USE 'A.D.' SUFFIXES]: The timeline only acknowledges `A.C.` (Ante Christum) for negative years.
+ * 	 There is absolutely no `A.D.` allowed or printed for positive years; they are handled purely as raw positive integers.
+ *   12. [MUSTN'T PANIC AT 400-DAY YEARS OR 60-DAY MONTHS]: Calendar linearity is a myth. Year 1154 mathematically is
+ * 	 448 days long. Ancient intercalary months (Months 90, 91, 92, 93) stretch wildly.
+ * 	 Do not hardcode a cap of 31 days for a month or 366 days for a year if You want to support Pre-1900s, else; do not care.
+ *   13. [MUSTN'T OMIT SUFFIXES ON AMBIGUOUS YEARS]: When interacting with transition periods (like the Lady Day overlap in 1154/1155),
+ * 	 you must not leave the parser guessing. `O.S.` (Old Style) and `N.S.` (New Style)
+ * 	 suffixes are mathematically mandatory to resolve chronological overlaps.
+ * 	 14. [MUSN'T THINK NEW IS NEW] N.S. or O.S. is depending on what Julius Ceasar's reform did
+ *	 and-not what people did, N.S. of J.C. was in use until 1154 of Lady-day, then It switched to O.S..
  *
  * ============================================================================
  * NOTE: this is a standard, it can not be copyrighted in any way.
