@@ -186,24 +186,24 @@
  *   // Returns an array of exactly 18 formatted strings.
  *   // You extract them like: let turkic = past.toAltFormats()[10];
  *   // Assuming 'past' is 1939 Jan 1st 00:01:01 AM:
- *   [0] "1939/01/01"                        (YYYY/MIN/DD)
- *   [1] "1939 01/01"                        (YYYY MIN/DD)
- *   [2] "19390101"                          (YYYYMMDD)
- *   [3] "193911"                            (YYYY[m][dy] - no pad)
- *   [4] "1939011"                           (YYYY[MIN][dy] - padded month)
- *   [5] "1939101"                           (YYYY[m][DD] - padded day)
- *   [6] "1939 january 01"                   (Full Month padded day)
- *   [7] "1939 january 1"                    (Full Month no pad day)
- *   [8] "1939 jan. 1"                       (Short Month no pad day)
- *   [9] "1939 jan. 01"                      (Short Month padded day)
- *   [10] "4UENČ TABWȘKAN YWL , ARAM AY , 1INČ KUEN" (Turkic Runic — for all eras)
- *   [11] "4ᵗʰ RABBIT YRS , 1ˢᵗ MON , 1ˢᵗ DAY"       (Turkic English — for all eras)
- *   [12] "1939 YRS’s AKHET’s ÞOÞ’s 1ˢᵗ DEC’s 1 DAYS..." (Egyptian Formal)
- *   [13] "1939 1⁄1-1⁄1"                             (Egyptian Short)
- *   [14] "—"                                        (Sumerian Formal - if applicable)
- *   [15] "—"                                        (Sumerian Short - if applicable)
- *   [16] "—"                                        (Stonehenge Formal - if applicable)
- *   [17] "—"                                        (Stonehenge Short - if applicable)
+ *   [0] "1939/01/01"                        				(YYYY/MIN/DD)
+ *   [1] "1939 01/01"                        				(YYYY MIN/DD)
+ *   [2] "19390101"                          				(YYYYMMDD)
+ *   [3] "193911"                            				(YYYY[m][dy] - no pad)
+ *   [4] "1939011"                           				(YYYY[MIN][dy] - padded month)
+ *   [5] "1939101"                           				(YYYY[m][DD] - padded day)
+ *   [6] "1939 january 01"                   				(Full Month padded day)
+ *   [7] "1939 january 1"                    				(Full Month no pad day)
+ *   [8] "1939 jan. 1"                       				(Short Month no pad day)
+ *   [9] "1939 jan. 01"                      				(Short Month padded day)
+ *   [10] "4UENČ TABWȘKAN YWL , ARAM AY , 1INČ KUEN"		(Turkic Runic — for all eras)
+ *   [11] "4ᵗʰ RABBIT YRS , 1ˢᵗ MON , 1ˢᵗ DAY"      		(Turkic English — for all eras)
+ *   [12] "1939 YRS’s AKHET’s ÞOÞ’s 1ˢᵗ DEC’s 1 DAYS..."	(Egyptian Formal)
+ *   [13] "1939 1⁄1-1⁄1"                            		(Egyptian Short)
+ *   [14] "—"                                       		(Sumerian Formal - if applicable)
+ *   [15] "—"                                       		(Sumerian Short - if applicable)
+ *   [16] "—"                                       		(Stonehenge Formal - if applicable)
+ *   [17] "—"                                       		(Stonehenge Short - if applicable)
  *
  * [D] FORMAT
  * Format is ab ovo designt to flow as big→small. Different formats ,
@@ -222,37 +222,43 @@
  *   3. [MUSTN'T ASSUME 60-SECOND MINUTES]: While most minutes are 60 seconds, the daily
  * 	 leap-minute at `11:57 PM` expands to up to 240/241 seconds to absorb the sidereal shift.
  * 	 Do not assume 60 seconds is a hard ceiling.
- *   4. [MUSTN'T LOOK FOR YEAR 0]: There is mathematically no Year 0. The calendar steps directly
+ *   4. [MUSTN'T LOOK FOR YEAR 0]: There is no Year 0. The calendar steps directly
  * 	 from `1 A.C.` to `1 A.D.`. Mathematical additions across the BCE/CE boundary naturally skip zero.
  *   5. [MUSTN'T FEED 24-HOUR STRINGS]: The parser mandates a 12-hour format string and always
  * 	 requires an explicit `AM` or `PM` attached to the very end of the string.
  * 	 We only speak in AM/PM, but you must do it my way.
  *   6. [MUSTN'T USE '12' FOR NOON/MIDNIGHT]: The hours of `12 AM` and `12 PM` do not logically exist.
- * 	 Hours represent *completed* units of time, meaning the first hour of a cycle strictly starts at `00`.
- * 	 Standard `12:00:00` noon is mathematically mapped and aligned via `11:60:60`.
- *   7. [MUSTN'T EXPECT LEFT-TO-RIGHT PARSING]: Because the year length is mathematically unbounded and dynamic
+ * 	 Hours represent completed units of time, meaning the first hour of a cycle strictly starts at `00`.
+ * 	 Standard `12:00:00` noon is  mapped and aligned via `11:60:60`.
+ *   7. [MUSTN'T EXPECT LEFT-TO-RIGHT PARSING]: Because the year length is  unbounded and dynamic
  * 	 (stretching back to deep Stonehenge epochs), the timestamp string is parsed strictly right-to-left.
  * 	 You must not assume fixed-length, zero-padded years like `YYYY`.
  *   8. [MUSTN'T ASSUME UTC IS THE CENTER OF TIME]: The system defines JST (Akashi Municipal Planetarium)
  * 	 as the universal chronological baseline. We do not add 9 hours to UTC, rather; Greenwich Mean Time is
  * 	 considered 9 hours behind the true baseline.
  *   9. [MUSTN'T ASSUME JANUARY IS MONTH 01]: Chronological history is not static. Before `45 A.C.`, Month 01
- * 	 is strictly *Martius* (March). Before `713 A.C.`, January and February do not mathematically exist, and
+ * 	 is strictly *Martius* (March). Before `713 A.C.`, January and February do not  exist, and
  * 	 winter is a nameless void dumped entirely into Month 90.
  *   10. [MUSTN'T EXPECT THE 1582 GREGORIAN SHIFT]: We follow the English Lady Day shift and the subsequent
  * 	 civil standard. The timeline wipes 11 days abruptly in September 1752. Do not attempt to map
  * 	 the Catholic 1582 calendar corrections to this system.
  *   11. [MUSTN'T USE 'A.D.' SUFFIXES]: The timeline only acknowledges `A.C.` (Ante Christum) for negative years.
  * 	 There is absolutely no `A.D.` allowed or printed for positive years; they are handled purely as raw positive integers.
- *   12. [MUSTN'T PANIC AT 400-DAY YEARS OR 60-DAY MONTHS]: Calendar linearity is a myth. Year 1154 mathematically is
+ *   12. [MUSTN'T PANIC AT 400-DAY YEARS OR 60-DAY MONTHS]: Calendar linearity is a myth. Year 1154  is
  * 	 448 days long. Ancient intercalary months (Months 90, 91, 92, 93) stretch wildly.
  * 	 Do not hardcode a cap of 31 days for a month or 366 days for a year if You want to support Pre-1900s, else; do not care.
  *   13. [MUSTN'T OMIT SUFFIXES ON AMBIGUOUS YEARS]: When interacting with transition periods (like the Lady Day overlap in 1154/1155),
  * 	 you must not leave the parser guessing. `O.S.` (Old Style) and `N.S.` (New Style)
- * 	 suffixes are mathematically mandatory to resolve chronological overlaps.
+ * 	 suffixes are  mandatory to resolve chronological overlaps.
  * 	 14. [MUSN'T THINK NEW IS NEW] N.S. or O.S. is depending on what Julius Ceasar's reform did
  *	 and-not what people did, N.S. of J.C. was in use until 1154 of Lady-day, then It switched to O.S..
- *
+ *   15. [MUSTN'T ASSUME SP IS THE NORMAL]: The standard space (SP) and standard hyphen-minus are not
+ * 	 the baseline. The system expects the Non-Breaking Space (NBSP, \u00A0) and the
+ * 	 Non-Breaking Hyphen (\u2011) as the universal default for all chronological formatting. You must
+ * 	 treat standard breaking characters as fallback approximations.
+ *   16. [MUSTN'T THINK A.C. IS FOR 1]: It Literally means Ante-christum, not "Before Year 1".
+ * 	 Non-negative A.C.s do, & will, exist.
+ * 
  * ============================================================================
  * NOTE: this is a standard, it can not be copyrighted in any way.
  * It is free for anyone to implement in any programming language,
@@ -360,6 +366,36 @@ const propertime = (function () {
 			let epagDay = dayInYear - 360 + 1;
 			return { year, month: 12, day: epagDay, epagomenal: true };
 		}
+	}
+
+	function stonehengeToJdn(lapse, hole, days) {
+		const cycleLength = 20454;
+		let absoluteDays = Math.floor(((hole - 1) * 1461) / 4) + days - 1;
+		let daysWithinLap = cycleLength - absoluteDays;
+		if (daysWithinLap === cycleLength) daysWithinLap = 0;
+		let rem = (daysWithinLap - 16865 + 20454) % 20454;
+		let daysBeforeBoundary = (lapse - 1) * 20454 + rem;
+		let firstStonehengeDay = currentEgyptianEpoch - (SUMERIAN_TOTAL_YEARS * 360) - 1;
+		return firstStonehengeDay - daysBeforeBoundary;
+	}
+
+	function sumerianToJdn(kingIndex, year, month, day) {
+		let currentDay = 0;
+		for (let i = 0; i < kingIndex; i++) {
+			currentDay += SUMERIAN_KINGS[i][1] * 360;
+		}
+		let daysIntoKing = (year - 1) * 360 + (month - 1) * 30 + (day - 1);
+		let dayIndex = currentDay + daysIntoKing;
+		let totalSumerianDays = SUMERIAN_TOTAL_YEARS * 360;
+		let daysBeforeEnd = (totalSumerianDays - 1) - dayIndex;
+		let endJdn = currentEgyptianEpoch - 1;
+		return endJdn - daysBeforeEnd;
+	}
+
+	function egyptianToJdn(year, month, day, epagomenal) {
+		let daysSinceEpoch = (year - 1) * 365;
+		let dayInYear = epagomenal ? (360 + day - 1) : ((month - 1) * 30 + (day - 1));
+		return currentEgyptianEpoch + daysSinceEpoch + dayInYear;
 	}
 
 	function pad(n, l = 2) {
@@ -598,11 +634,13 @@ const propertime = (function () {
 			m = datePart.m;
 			day = datePart.d;
 
-			h = Math.floor(tempSec / 3600) % 24;
-			if (h === 23 && tempSec >= 86160) {
+			let raw_h = Math.floor(tempSec / 3600);
+			if (raw_h >= 23 && tempSec >= 86160) {
+				h = 23;
 				min = 57;
 				sec = (tempSec - 86160) + 1;
 			} else {
+				h = raw_h % 24;
 				min = (Math.floor(tempSec / 60) % 60) + 1;
 				sec = (tempSec % 60) + 1;
 			}
@@ -848,6 +886,79 @@ const propertime = (function () {
 		}
 
 		if (input) {
+			let normInput = input.replace(/ /g, "\u00A0").replace(/[-\u2010]/g, "\u2011").trim();
+			
+			const ord = "(?:[ᵗˢⁿʳʰ]+|th|st|nd|rd)?";
+			const tStr = "\\u00A0+(0?\\d|1[0-2]):(\\d{2}):(\\d{2,3})\\u00A0+(AM|PM)";
+			
+			const PATTERNS = {
+				shFormal: new RegExp(`^(\\d+)${ord}\\u00A0LAP’s\\u00A0(\\d+)${ord}\\u00A0HOL’s\\u00A0(\\d+)${ord}\\u00A0DAYS${tStr}$`, "i"),
+				shShort: new RegExp(`^(\\d+)\\u2011(\\d+)[\\u2044\\/](\\d+)${tStr}$`, "i"),
+				suFormal: new RegExp(`^(.+?)’s\\u00A0(\\d+)${ord}\\u00A0YRS’s\\u00A0(\\d+)${ord}\\u00A0MON’s\\u00A0(\\d+)${ord}\\u00A0DAYS${tStr}$`, "i"),
+				suShort: new RegExp(`^(\\d+)\\u00A0(\\d+)\\u2011(\\d+)[\\u2044\\/](\\d+)${tStr}$`, "i"),
+				egEpagFormal: new RegExp(`^(\\d+)${ord}\\u00A0YRS’s\\u00A0SHEMU’s\\u00A0MESORE\\u00A04${ord}\\u00A0DEC’s\\u00A0(\\d+)${ord}\\u00A0DAYS\\u00A0A\\.V\\.${tStr}$`, "i"),
+				egFormal: new RegExp(`^(\\d+)${ord}\\u00A0YRS’s\\u00A0(AKHET|PERET|SHEMU)’s\\u00A0(.+?)’s\\u00A0(\\d+)${ord}\\u00A0DEC’s\\u00A0(\\d+)${ord}\\u00A0DAYS${tStr}$`, "i"),
+				egEpagShort: new RegExp(`^(\\d+)\\u00A03[\\u2044\\/]4\\u20114[\\u2044\\/](\\d+)\\u00A0A\\.V\\.${tStr}$`, "i"),
+				egShort: new RegExp(`^(\\d+)\\u00A0(\\d+)[\\u2044\\/](\\d+)\\u2011(\\d+)[\\u2044\\/](\\d+)${tStr}$`, "i")
+			};
+
+			let jdnFound = null;
+			let tMatch = null;
+			let match;
+
+			if ((match = normInput.match(PATTERNS.shFormal))) {
+				jdnFound = stonehengeToJdn(parseInt(match[1]), parseInt(match[2]), parseInt(match[3]));
+				tMatch = match.slice(4);
+			} else if ((match = normInput.match(PATTERNS.shShort))) {
+				jdnFound = stonehengeToJdn(parseInt(match[1]), parseInt(match[2]), parseInt(match[3]));
+				tMatch = match.slice(4);
+			} else if ((match = normInput.match(PATTERNS.suFormal))) {
+				let kName = match[1].toUpperCase();
+				let kIdx = SUMERIAN_KINGS.findIndex(k => k[0] === kName);
+				if (kIdx === -1) throw new Error("Invalid Sumerian King: " + kName);
+				jdnFound = sumerianToJdn(kIdx, parseInt(match[2]), parseInt(match[3]), parseInt(match[4]));
+				tMatch = match.slice(5);
+			} else if ((match = normInput.match(PATTERNS.suShort))) {
+				let kIdx = parseInt(match[1]) - 1;
+				if (kIdx < 0 || kIdx >= SUMERIAN_KINGS.length) throw new Error("Invalid Sumerian King ID: " + match[1]);
+				jdnFound = sumerianToJdn(kIdx, parseInt(match[2]), parseInt(match[3]), parseInt(match[4]));
+				tMatch = match.slice(5);
+			} else if ((match = normInput.match(PATTERNS.egEpagFormal))) {
+				jdnFound = egyptianToJdn(parseInt(match[1]), 12, parseInt(match[2]), true);
+				tMatch = match.slice(3);
+			} else if ((match = normInput.match(PATTERNS.egFormal))) {
+				let mName = match[3].toUpperCase();
+				let mIdx = EGYPTIAN_MONTHS.indexOf(mName);
+				if (mIdx === -1) throw new Error("Invalid Egyptian Month: " + mName);
+				let month = mIdx + 1;
+				let decan = parseInt(match[4]);
+				let dayInDecan = parseInt(match[5]);
+				let day = (decan - 1) * 10 + dayInDecan;
+				jdnFound = egyptianToJdn(parseInt(match[1]), month, day, false);
+				tMatch = match.slice(6);
+			} else if ((match = normInput.match(PATTERNS.egEpagShort))) {
+				jdnFound = egyptianToJdn(parseInt(match[1]), 12, parseInt(match[2]), true);
+				tMatch = match.slice(3);
+			} else if ((match = normInput.match(PATTERNS.egShort))) {
+				let season = parseInt(match[2]);
+				let monthInSeason = parseInt(match[3]);
+				let month = (season - 1) * 4 + monthInSeason;
+				let decan = parseInt(match[4]);
+				let dayInDecan = parseInt(match[5]);
+				let day = (decan - 1) * 10 + dayInDecan;
+				jdnFound = egyptianToJdn(parseInt(match[1]), month, day, false);
+				tMatch = match.slice(6);
+			}
+
+			if (jdnFound !== null) {
+				let ymd = jdnToYmd(jdnFound);
+				let hr = pad(parseInt(tMatch[0]));
+				let min = pad(parseInt(tMatch[1]));
+				let sec = pad(parseInt(tMatch[2]));
+				let ampm = tMatch[3].toUpperCase();
+				return new ProperTime({ year: ymd.y.toString(), month: pad(ymd.m), day: pad(ymd.d), hr, min, sec, ampm }).add(offsetSeconds, "SEC");
+			}
+
 			let s = input
 				.replace(/\s/g, "")
 				.replace(/A\.C\./i, "")
