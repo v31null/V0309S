@@ -2737,6 +2737,73 @@ const propertime = (function () {
 		return calendar;
 	};
 
+	ptFunc.getclndrmodern = function(input) {
+		let t = ptFunc(input);
+		let y = parseInt(t.year);
+		if (y < 1800) {
+			throw new Error("Invalid date.");
+		}
+		
+		let isLeap = (y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0));
+		let monthDays = [31, isLeap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+		let monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+		let dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+		
+		let modernCal = [];
+		let wknds = {};
+		
+		for (let m = 0; m < 12; m++) {
+			let numDays = monthDays[m];
+			let weekdays = [];
+			let weekendCols = []; // 0-indexed column positions that are weekends
+			
+			for (let d = 1; d <= 7; d++) {
+				let jsDate = new Date(y, m, d);
+				let dayOfWeek = jsDate.getDay();
+				weekdays.push(dayNames[dayOfWeek]);
+				if (dayOfWeek === 0 || dayOfWeek === 6) { // Sunday or Saturday
+					weekendCols.push(d - 1);
+				}
+			}
+			
+			let monthWknds = [];
+			let rows = [];
+			for(let row = 0; row < 5; row++) {
+				let rowData = [];
+				for(let col = 0; col < 7; col++) {
+					let dayNum = row * 7 + col + 1;
+					if (dayNum <= numDays) {
+						rowData.push(dayNum);
+						if (weekendCols.includes(col)) {
+							monthWknds.push(dayNum);
+						}
+					}
+				}
+				if (rowData.length > 0) rows.push(rowData);
+			}
+			
+			wknds[m + 1] = monthWknds; // Month is 1-indexed for the API
+			
+			let emptyColspan = 0;
+			let lastRow = rows[rows.length - 1];
+			if (lastRow.length < 7) {
+				emptyColspan = 7 - lastRow.length;
+			}
+			
+			modernCal.push({
+				title: monthNames[m],
+				weekdays: weekdays,
+				rows: rows,
+				emptyColspan: emptyColspan
+			});
+		}
+		
+		return {
+			calendar: modernCal,
+			wknds: wknds
+		};
+	};
+
 	return ptFunc;
 })();
 
