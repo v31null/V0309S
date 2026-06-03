@@ -201,7 +201,7 @@
  *   // true:  { displayYear: "8 001", suffix: " A.C." }
  *
  *   past.toAltFormats(is_he);
- *   // Returns an array of exactly 18 formatted strings.
+ *   // Returns an array of exactly 20 formatted strings.
  *   // You extract them like: let turkic = past.toAltFormats()[10];
  *   // Assuming 'past' is 1939 Jan 1st 00:01:01 AM:
  *   [0] "1939/01/01"                        				(YYYY/MIN/DD)
@@ -216,14 +216,14 @@
  *   [9] "1939 jan. 01"                      				(Short Month padded day)
  *   [10] "4UENČ TABWȘKAN YWL , ARAM AY , 1INČ KUEN"		(Turkic Runic — for all eras)
  *   [11] "4ᵗʰ RABBIT YRS , 1ˢᵗ MON , 1ˢᵗ DAY"      		(Turkic English — for all eras)
- *   [12] "1939 YRS’s AKHET’s ÞOÞ’s 1ˢᵗ DEC’s 1 DAYS..."	(Egyptian Formal)
+ *   [12] "1939 YRS’s AKHET’s 1ˢᵗ MON’s 1ˢᵗ DEC’s 1 DAYS..."	(Egyptian Formal)
  *   [13] "1939 1⁄1-1⁄1"                            		(Egyptian Short)
  *   [14] "—"                                       		(Sumerian Formal - if applicable)
  *   [15] "—"                                       		(Sumerian Short - if applicable)
- *   [16] "-"                                       		(Stonehenge Formal - if applicable)
- *   [17] "-"                                       		(Stonehenge Short - if applicable)
- *   [18] "-"                                       		(Kings Regnal Formal - if applicable)
- *   [19] "-"                                       		(Kings Regnal Short - if applicable)
+ *   [16] "—"                                       		(Stonehenge Formal - if applicable)
+ *   [17] "—"                                       		(Stonehenge Short - if applicable)
+ *   [18] "—"                                       		(Kings Regnal Formal - if applicable)
+ *   [19] "—"                                       		(Kings Regnal Short - if applicable)
  *
  * [D] FORMAT
  * Format is ab ovo designt to flow as big→small. Different formats ,
@@ -278,6 +278,510 @@
  * 	 treat standard breaking characters as fallback approximations.
  *   16. [MUSTN'T THINK A.C. IS FOR 1]: It Literally means Ante-christum, not "Before Year 1".
  * 	 Non-negative A.C.s do, & will, exist.
+ * [F] SOURCES
+ * The following sources and references were consulted:
+ *
+ * - en.wikipedia.org
+ *     > List of English monarchs - Wikipedia
+ *     > Wessex - Wikipedia
+ *     > Edward the Elder - Wikipedia
+ *     > Alfred the Great - Wikipedia
+ *     > List of monarchs of Wessex - Wikipedia
+ *     > Cerdic of Wessex - Wikipedia
+ *     > Æthelberht, King of Wessex - Wikipedia
+ *     > Æthelwulf, King of Wessex - Wikipedia
+ *     > Kingdom of Sussex - Wikipedia
+ *     > Kingdom of Essex - Wikipedia
+ *     > Cenwalh of Wessex - Wikipedia
+ *     > Uruk - Wikipedia
+ *     > Udul-kalama - Wikipedia
+ *     > Sumerian King List - Wikipedia
+ *     > First Dynasty of Ur - Wikipedia
+ *     > Lugal-kitun - Wikipedia
+ *     > Gilgamesh - Wikipedia
+ *     > Mesannepada - Wikipedia
+ *     > Ur-Nungal - Wikipedia
+ *     > Mesh-he - Wikipedia
+ *     > Babylonian Chronicles - Wikipedia
+ *     > Nabta Playa - Wikipedia
+ *     > Newgrange - Wikipedia
+ *     > Aubrey holes - Wikipedia
+ *     > Edward Lhuyd - Wikipedia
+ *     > Uruk period - Wikipedia
+ *     > Proto-cuneiform - Wikipedia
+ *     > 710s BC - Wikipedia
+ *     > Esarhaddon - Wikipedia
+ *     > Julian calendar - Wikipedia
+ *     > 1928 United States presidential election - Wikipedia
+ *     > 1928 United States elections - Wikipedia
+ *     > List of calendars - Wikipedia
+ *     > Egyptian calendar - Wikipedia
+ *     > Thoth - Wikipedia
+ *     > Sothic cycle - Wikipedia
+ *     > Decree of Canopus - Wikipedia
+ *     > Ebers Papyrus - Wikipedia
+ *     > Talk:Egyptian calendar - Wikipedia
+ *     > Roman calendar - Wikipedia
+ *     > Karl Richard Lepsius - Wikipedia
+ *     > Byzantine calendar - Wikipedia
+ *     > February - Wikipedia
+ * - researchgate.net
+ *     > (PDF) VedicDateTime: An R package - ResearchGate
+ *     > (PDF) Time Is Running. Ancient Greek Chronography and the Ancient Near East
+ *     > (PDF) Contributions to Computational Assyriology - ResearchGate
+ *     > Fred Wendorf 1924-2015. Biographical Memoirs by Joyce Marcus and Kent V. Flannery. pp. 1-17 National Academy of Sciences, Washington DC. - ResearchGate
+ *     > A Computer-Aided Interpretation of the Nabta Playa Stone Circle - ResearchGate
+ *     > (PDF) The people of Stonehenge - ResearchGate
+ *     > Parchmarks at Stonehenge, July 2013 - ResearchGate
+ *     > 2 W 20274: Uruk (modern, "Warka") Mesopotamian protocuneiform clay... | Download Scientific Diagram - ResearchGate
+ *     > (PDF) 1. Possible Markers of Inauthenticity in a Greek New Testament Papyrus: Genuinely Bad or a Very Good Fake? - ResearchGate
+ *     > Towards an absolute scientific date for the Egyptian New Kingdom, part 1: the Egyptian Civil Calendar revisited - ResearchGate
+ *     > (PDF) MAY A 'SOTHIC FAULT LINE' EXIST IN THE CIVIL CALENDAR OF EGYPT?
+ *     > A Sothic date for the early 4th Dynasty of Egypt - ResearchGate
+ *     > The Calendars and the Year-counts of Ancient Egypt - ResearchGate
+ *     > (PDF) 1April2021EgyptianChronologyZoltanSimon - ResearchGate
+ *     > (PDF) Dating the reigns of Xerxes and Artaxerxes - ResearchGate
+ *     > (PDF) The First Calends of the Julian Calendar - ResearchGate
+ * - archive.org
+ *     > Full text of "Hand Book Of British Chronology" - Internet Archive
+ *     > A history of William Paterson and the Darien company
+ *     > Full text of "The Illustrated Guide To The Egyptian Museum By Samy Salah"
+ *     > Full text of "THE RECONSTRUCTED CHRONOLOGY OF THE EGYPTIAN KINGS THE EBERS CALENDAR IS PROBABLY THE MOST VALUABLE" - Internet Archive
+ *     > Full text of "PC World" - Internet Archive
+ *     > The decree of Canopus in hieroglyphics and Greek
+ *     > Full text of "History of Duchess [sic] county, New York, with ... biographical sketches of some of its prominent men and pioneers" - Internet Archive
+ *     > Full text of "Cyclopaedia of Biblical, theological, and ecclesiastical literature"
+ *     > Full text of "The transactions of the Rockefeller family association for ... 1905-"
+ * - britannica.com
+ *     > List of British Monarchs | Kings and Queens of Britain - Britannica
+ *     > Edward | Biography, Reign, & Facts - Britannica
+ *     > Alfred | Biography, Reign, & Facts | Britannica
+ *     > Cenwalh | Anglo-Saxon, Mercian, Christianity - Britannica
+ *     > Stonehenge | History, Location, Map, Meaning, & Facts - Britannica
+ *     > Stonehenge - 1st-2nd Stages, Aubrey Holes, Sarsen Stones, Trilithons, Station Stones | Britannica
+ *     > Egyptian calendar | System, Ancient, & Facts - Britannica
+ *     > Richard Lepsius | Decipherment, Coptic Studies, Prussian Expedition | Britannica
+ *     > Edwin Smith papyrus | Medical Text, Surgery, Significance, & Location | Britannica
+ * - isac.uchicago.edu
+ *     > STUDIES IN ANCIENT ORIENTAL CIVILIZATION
+ *     > Sumerian King List - Institute for the Study of Ancient Cultures
+ *     > THE SUMERIANS - Institute for the Study of Ancient Cultures
+ *     > Pomp, Circumstance, and the Performance of Politics - Institute for the Study of Ancient Cultures
+ *     > STUDIES IN ANCIENT.ORIENTAL CIVILIZATION" NO. 26
+ *     > ancient egyptian coregencies
+ *     > THE UNIVERSITY OF CHICAGO ORIENTAL INSTITUTE PUBLICATIONS
+ *     > SAOC 26. The Calendars of Ancient Egypt. Richard A. Parker
+ *     > IN REMEMBRANCE OF ME - Institute for the Study of Ancient Cultures
+ * - scribd.com
+ *     > Wessex Kings Family Tree (802–1066) | PDF - Scribd
+ *     > List of Wessex and Other English Kings | PDF | Sports & Recreation | Social Science - Scribd
+ *     > Megaliths and Ceremonialism at Nabta Playa | PDF | Desert | Sahara - Scribd
+ *     > Full Text PDF | PDF | Archaeology | Ur - Scribd
+ *     > Late Uruk Pigs and Herded Animals | PDF - Scribd
+ *     > A Study in The Coptic Calendar - The Week | PDF | Planets In Astrology | Jupiter - Scribd
+ *     > Ancient Egyptian Calendar Origins | PDF - Scribd
+ *     > Origins and Meanings of Month Names | PDF | Augustus | Ancient Roman Religion - Scribd
+ *     > Cosmic Mysteries and Astrological Insights | PDF | Zodiac | Esoteric Cosmology - Scribd
+ * - worldhistory.org
+ *     > Timeline: Edward the Elder - World History Encyclopedia
+ *     > Timeline: Alfred the Great - World History Encyclopedia
+ *     > Timeline: Kingdom of Wessex - World History Encyclopedia
+ *     > Sumerians: Inventors of Civilization - World History Encyclopedia
+ *     > Sumerian King List - World History Encyclopedia
+ *     > Gilgamesh - World History Encyclopedia
+ *     > Geme-Suen v Ur-Lugal's Wife - A Court Case in Ancient Mesopotamia
+ * - instonebrewer.com
+ *     > Egyptian Royal Genealogy: Ptolemaic Chronology -- Roman 041 BC
+ *     > Egyptian to Julian conversion: Canopic reform analysis
+ *     > Egyptian to Julian conversion: Civil calendar structure
+ *     > Ptolemaic Roman Calendar Conversion Tables
+ *     > Ptolemaic Chronology -- Egyptian calendars
+ * - brill.com
+ *     > Sons of the Sun: The Mythological Foundations of the First Dynasty of Uruk* in - Brill
+ *     > ADMINISTRATIVE TIMEKEEPING IN ANCIENT MESOPOTAMIA* BY R. K. ENGLUND One of the ostensibly unassuming but, for want of better exa - Brill
+ *     > Administrative Timekeeping in Ancient Mesopotamia in - Brill
+ *     > Anglo-Saxon Prognostics, 900-1100 - Brill
+ * - cdli.ox.ac.uk
+ *     > Uruk (modern Warka) - CDLI Wiki
+ *     > Proto-cuneiform - CDLI Wiki
+ *     > The Late Uruk Period - CDLI Wiki
+ *     > State of Research - CDLI Wiki
+ * - journals.uchicago.edu
+ *     > Valuable than All Gold": Ptolemy's Royal Canon and Babylonian Chronology - The University of Chicago Press: Journals
+ *     > Sargon II's Defeat of Egypt: Rhetoric or Historical Facts?
+ *     > A Survey of Dated Babylonian Economic Texts, 721-626 - The University of Chicago Press: Journals
+ *     > The Fifth-Century Jewish Calendar at Elephantine
+ * - academia.edu
+ *     > (PDF) Evidence of Periodicity in Ancient Egyptian Calendars of Lucky and Unlucky Days
+ *     > Chronological Framework of Ancient History. 2: Founding of the Nations - Academia.edu
+ *     > (PDF) Universal Chronology of Egypt - Ch.3 of Seeds of Western Culture - Academia.edu
+ * - academic.oup.com
+ *     > Results from the investigation of temporal discontinuity in the Hydrogen Epoch of Reionization Array data - Oxford Academic
+ *     > Temporal discontinuity analysis - ORIGINAL UNEDITED MANUSCRIPT - Oxford University Press
+ *     > Results from the investigation of temporal discontinuity in the Hydrogen Epoch of Reionization Array data | RAS Techniques and Instruments | Oxford Academic
+ * - archiv.ub.uni-heidelberg.de
+ *     > GERMAN BIBLICAL ARCHAEOLOGY: RETROSPECTIVE OF A NEGLECTED LEGACY A Study of the German contribution to the A
+ *     > Egypt as an astronomical-astrological Mesopotamia, Greece, and India
+ *     > Early encounters: Egyptian-Coptic studies and comparative linguistics in the century from Schlegel to Finck*
+ * - cambridge.org
+ *     > Writing and the Perpetuation of the State (Part III) - Writing and the Ancient State
+ *     > The Reduplicated Present (Chapter 4) - Origins of the Greek Verb
+ *     > Evidence of Periodicity in Ancient Egyptian Calendars of Lucky and Unlucky Days | Cambridge Archaeological Journal
+ * - dokumen.pub
+ *     > Ancient Africa: A Global History, to 300 CE 069124409X, 9780691244099 - dokumen.pub
+ *     > Breaking Ground: Pioneering Women Archaeologists - DOKUMEN.PUB
+ *     > The Ancient Egyptian Daybook 9781365587870, 9781365587948, 9781365620836 - DOKUMEN.PUB
+ * - kids.kiddle.co
+ *     > List of monarchs of Wessex Facts for Kids
+ *     > Sothic cycle Facts for Kids
+ *     > February Facts for Kids
+ * - metmuseum.org
+ *     > Gilgamesh - The Metropolitan Museum of Art
+ *     > The Origins of Writing - The Metropolitan Museum of Art
+ *     > Telling Time in Ancient Egypt - The Metropolitan Museum of Art
+ * - books.ub.uni-heidelberg.de
+ *     > In Search of the Origins of Lower Egyptian Pottery: A New Approach to Old Data (Studies in African Archaeology, Vol. 16) - Publishing Services Heidelberg University Library
+ *     > Romuald Schild - FRED WENDORF, Jr. 31 July 1924 – 15 July 2015 The Founder of the Combined Prehistoric Expedition and for Several Decades its Guiding Spirit1 - Publishing Services Heidelberg University Library
+ * - britishmuseum.org
+ *     > mace | British Museum
+ *     > tablet; seal-impression | British Museum
+ * - de.wikipedia.org
+ *     > Julius Jordan (Archäologe) - Wikipedia
+ *     > Kanopus-Dekret - Wikipedia
+ * - ebsco.com
+ *     > Building of Stonehenge | Anthropology | Research Starters - EBSCO
+ *     > Egyptian calendar | History | Research Starters - EBSCO
+ * - english-heritage.org.uk
+ *     > Stonehenge archaeologists | English Heritage
+ *     > Sources for Stonehenge | English Heritage
+ * - i-asc.org
+ *     > The History and Science of Leap Day - A pair of two lessons about February 29 Pt.2 | I-ASC
+ *     > The History and Science of Leap Day – A pair of two lessons about February 29 Pt.2 - I-ASC
+ * - iris.polito.it
+ *     > The first Calends of the Julian Calendar - POLITECNICO DI TORINO Repository ISTITUZIONALE
+ *     > POLITECNICO DI TORINO Repository ISTITUZIONALE
+ * - livius.org
+ *     > CM 7 (Tummal Chronicle) - Livius
+ *     > The Sumerian King List - Livius.org
+ * - oracc.museum.upenn.edu
+ *     > BC 115 Shiff - Oracc - University of Pennsylvania
+ *     > dcclt - Oracc
+ * - penn.museum
+ *     > Leon Legrain - Penn Museum
+ *     > Museum Bulletin | The Uruk Period
+ * - pmc.ncbi.nlm.nih.gov
+ *     > Stonehenge: a view from medicine - PMC - NIH
+ *     > Lost in translation: the history of the Ebers Papyrus and Dr. Carl H. von Klein - PMC
+ * - timeanddate.com
+ *     > October 899 Calendar – Julian calendar - Time and Date
+ *     > Year 713 Calendar – Egypt - Time and Date
+ * - yorku.ca
+ *     > Egyptian Civil to Julian Calendar Conversion Tables
+ *     > Ptolemaic Roman Calendar Conversion Tables
+ * - aa.usno.navy.mil
+ *     > Julian Date Converter - US Naval Observatory Astronomical Applications Department
+ * - acsearch.info
+ *     > Results 1-100 of 100 (0.00 seconds) - acsearch.info - Auction research
+ * - adip.faa.gov
+ *     > Airport Data and Information Portal
+ * - alexanderancientart.com
+ *     > Sopdet - Alexander Ancient Art
+ * - almanac.com
+ *     > February Calendar 2026: Holidays, Fun Facts, and Folklore - Farmer's Almanac
+ * - amrcoins.com
+ *     > Anglo-Saxon Coins a background Pt1
+ * - ancientmesopotamia.org
+ *     > People | Mesannepada - Ancient Mesopotamia
+ * - ancientworldmagazine.com
+ *     > Evolution of Sumerian kingship - Ancient World Magazine
+ * - ancientworldonline.blogspot.com
+ *     > Online Prepublication: Mesopotamian Chronicles
+ * - anglo-ethiopian.org
+ *     > Seven Years Younger - Anglo-Ethiopian Society
+ * - ankhonline.com
+ *     > Nabta Playa During the Early and Middle Holocene - Ankhonline
+ * - api.pageplace.de
+ *     > Kings and Kingdoms of Early Anglo-Saxon England
+ * - apps.aavso.org
+ *     > Julian Date Converter - aavso
+ * - archaeology.sa
+ *     > Jean-François Champollion – Archaeology Magazine
+ * - archive.griffith.ox.ac.uk
+ *     > Lepsius, Karl Richard - Griffith Institute Archive
+ * - arkeonews.net
+ *     > Archaeologists Discover Unique Hieroglyphic Version of Ptolemy III's Canopus Decree - Arkeonews
+ * - armaghrobinsonlibrary.co.uk
+ *     > Exhibition History of Calendars - Armagh Robinson Library & No 5
+ * - asmalldoseoftoxicology.org
+ *     > Papyrus - Toxipedia
+ * - assets.cambridge.org
+ *     > ILLUMINATING THE WORD IN THE EARLY MIDDLE AGES - Assets - Cambridge University Press
+ * - assyriologie.uni-muenchen.de
+ *     > Children in Institutional Households of Late Uruk Period Mesopotamia
+ * - astronomy.com
+ *     > Nabta Playa: The world's first astronomical site was built in Africa - Astronomy Magazine
+ * - atarimagazines.com
+ *     > Egypt Calendar - Classic Computer Magazine Archive
+ * - ateneu.xtec.cat
+ *     > Egyptian Calendar - Ateneu
+ * - atlasobscura.com
+ *     > Nabta Playa Stone Circle in Aswan - Atlas Obscura
+ * - austriaca.at
+ *     > 7. chronicles
+ * - avalon.law.yale.edu
+ *     > The Anglo-Saxon Chronicle : Ninth Century - Avalon Project
+ * - bibalex.org
+ *     > SCIplanet - Imhotep: World's First Astronomer - Bibliotheca Alexandrina
+ * - bibelgriechisch.online
+ *     > Authentic: The Case for Mark 16:9-20 James Snapp, Jr. - Bibelgriechisch.online
+ * - bisi.ac.uk
+ *     > In the 1920s Sir Leonard Woolley's excavations at Ur competed for the public's attention with - The British Institute for the Study of Iraq
+ * - brewminate.com
+ *     > Calends: The Adoption and Use of the Julian Solar Calendar in Ancient Rome - Brewminate
+ * - britnumsoc.org
+ *     > THE COINAGE OF .ETHELRED I (865-871) - British Numismatic Society
+ * - britroyals.com
+ *     > King Edward The Elder | Britroyals
+ * - carltonroadacademy.net
+ *     > Kingdoms, Battles and Life in the Anglo-Saxon Times Famous Anglo-Saxons Anglo-Saxon Timeline
+ * - cartlann.org
+ *     > Essays and Poems by Thomas Davis - Cartlann
+ * - cdfa.ca.gov
+ *     > JULIAN DATE CALENDAR JULIAN DATE CALENDAR
+ * - cespu.pt
+ *     > Relatório de Atividades do Instituto Universitário de Ciências da Saúde - CESPU
+ * - chr.org.uk
+ *     > Gregorian Calendar Archives - And Did Those Feet
+ * - christies.com
+ *     > AN IMPORTANT MESOPOTAMIAN PROTO-CUNEIFORM CLAY ADMINISTRATIVE TABLET , URUK III PERIOD, CIRCA 3000 B.C. | Christie's
+ * - core2.gsfc.nasa.gov
+ *     > Julian Day Number Calculations
+ * - cran.r-project.org
+ *     > VedicDateTime - CRAN
+ * - csweb.bournemouth.ac.uk
+ *     > Draft of Appendix I: Select Investigations of the Stonehenge Landscape - Bournemouth University
+ * - d3ums4016ncdkp.cloudfront.net
+ *     > the williams collection of anglo-saxon, viking and norman coins part i
+ * - dib.ie
+ *     > Newgrange and the ghosts of Killmackumpshaugh - Dictionary of Irish Biography
+ * - discovermagazine.com
+ *     > Nabta Playa: The World's First Astronomical Site Was Built in Africa and Is Older Than Stonehenge | Discover Magazine
+ * - discoveryuk.com
+ *     > The Anglo-Saxon Kings of Wessex Listed in Order - Discovery UK
+ * - drikpanchang.com
+ *     > September 21, 2022 Gujarati Daily Panchang for New Delhi, NCT, India
+ * - dspace.ut.ee
+ *     > PEETER ESPAK The God Enki in Sumerian Royal Ideology and Mythology - DSpace - Tartu Ülikool
+ * - egyptologyforum.org
+ *     > THE EEF GUIDE TO INTERNET RESOURCES FOR ANCIENT EGYPTIAN TEXTS
+ * - elibrary.bsu.edu.az
+ *     > Kings and Kingdoms of Early Anglo-Saxon England - elibrary.bsu.az
+ * - elibrary.imf.org
+ *     > International Financial Statistics, October 1950 - IMF eLibrary
+ * - engelsbergideas.com
+ *     > Uruk and the origins of the sacred economy - Engelsberg ideas
+ * - epochconverter.com
+ *     > Day numbers for 2022 - Epoch Converter
+ * - epub.uni-regensburg.de
+ *     > The 360-Day Year in Mesopotamia Lis Brack-Bernsen
+ * - escholarship.org
+ *     > The Wikipedic Novel: Reading & Writing in The Open-Source Era - UC Berkeley
+ * - etcsl.orinst.ox.ac.uk
+ *     > The Sumerian king list: translation
+ * - eurekalert.org
+ *     > Proto-cuneiform tablet of Uruk V period [IMAGE] | EurekAlert! Science News Releases
+ * - fmg.ac
+ *     > ENGLAND ANGLO-SAXON KINGS - Foundation for Medieval Genealogy
+ * - fourmilab.ch
+ *     > Calendar Converter - Fourmilab
+ * - freight.cargo.site
+ *     > CAPS-LOCK.pdf - freight.cargo.si
+ * - friesian.com
+ *     > The Middle Kingdom of Egypt, Early Babylonia and Assyria
+ * - glyphdwellers.com
+ *     > Report 70 - The Great Year of the Maya - Michael J. Grofe - May 2021 - Glyph Dwellers
+ * - greyroom.org
+ *     > Outdating: The Time of "Culture" in Colonial Egypt by On Barak - Grey Room
+ * - guambuildupeis.us
+ *     > CHAPTER 2. OVERVIEW OF BEST MANAGEMENT PRACTICES AND PROPOSED MITIGATION MEASURES
+ * - gupea.ub.gu.se
+ *     > Gaming in Mohenjo-daro – an Archaeology of Unities - Gupea
+ * - gutenberg.org
+ *     > The Literature of the Celts | Project Gutenberg
+ * - helda.helsinki.fi
+ *     > Contributions to Computational Assyriology - Helda - University of Helsinki
+ * - historic-uk.com
+ *     > Kings and Queens of Wessex - Historic UK
+ * - historyforkids.net
+ *     > Roman Calendar - History For Kids
+ * - historyireland.com
+ *     > CHARLES CAMPBELL—THE MAN WHO DISCOVERED NEWGRANGE - History Ireland
+ * - hoover.archives.gov
+ *     > CAMPAIGN AND TRANSITION COLLECTION: 1928 - 1929 - Herbert Hoover Presidential Library-Museum
+ * - ia800507.us.archive.org
+ *     > Our race : its origin and its destiny
+ * - ia801504.us.archive.org
+ *     > Witchcraft And Black Magic
+ * - ia803106.us.archive.org
+ *     > Encyclopedia of the Archaeology of Ancient Egypt
+ * - iac.es
+ *     > chapter 4 the egyptian calendar
+ * - ideadeco.co
+ *     > Welcome February Magic in Athens Greece | IDEADECO
+ * - immortalwordsmith.co.uk
+ *     > King Cerdic of Wessex – The First Saxon King? | IW History Blog - Immortal Wordsmith
+ * - ingentaconnect.com
+ *     > NABTA PLAYA IN THE DEVELOPMENT OF SCIENCE AND TECHNOLOGY - Ingenta Connect
+ * - iris.unito.it
+ *     > Wisdom Between East and West: Mesopotamia, Greece and Beyond
+ * - irispublishers.com
+ *     > A Computer-Aided Interpretation of the Nabta Playa Stone Circle - Iris Publishers
+ * - is.muni.cz
+ *     > The Archaic Texts from Uruk - IS MUNI
+ * - isac-idb-static.uchicago.edu
+ *     > The Oriental Institute - The University of Chicago
+ * - isac-idb.uchicago.edu
+ *     > ISAC Museum Record ID 066eb5a6-d8ef-42cf-a126-040a85768a6b
+ * - journals.pan.pl
+ *     > The Megaliths of Nabta Playa
+ * - jstage.jst.go.jp
+ *     > Ur III Economy and Bureaucracy - J-Stage
+ * - kar.zcu.cz
+ *     > Nabta Playa and Its Role in Northeastern African Prehistory - KAR ZCU
+ * - keytoumbria.com
+ *     > Roman Republic - Key to Rome
+ * - knowledgebasedsociety.com
+ *     > Administrative Timekeeping in Ancient Mesopotamia - Knowledge ...
+ * - knowth.com
+ *     > Professor Michael J. O'Kelly and the Excavation of Newgrange - Knowth
+ * - labrujulaverde.com
+ *     > Stele with a Complete Monolingual Version of the Canopus Decree Issued by Pharaoh Ptolemy III in 238 B.C. Discovered - La Brújula Verde
+ * - lavia.org
+ *     > Ancient Egyptian civil calendar
+ * - liverpooluniversitypress.co.uk
+ *     > EDWARD LHWYD (1659/60–1709): SALVAGING A LIFETIME OF PATIENT SCHOLARSHIP1 | The Bodleian Library Record
+ * - longpelaexpertise.com.au
+ *     > Julian Date Converter - Longpela Expertise
+ * - lsa.umich.edu
+ *     > Tales of collectors & collections from the Kelsey Museum - College of LSA - University of Michigan
+ * - lughayangu.com
+ *     > Rome Didn't Invent the 365-Day Year - Lugha Yangu
+ * - magazine.unibo.it
+ *     > The origin of writing in Mesopotamia is tied to designs engraved on ancient cylinder seals
+ * - megalithic.co.uk
+ *     > Nabta Playa, Nubia - The Megalithic Portal
+ * - mikepitts.wordpress.com
+ *     > Stonehenge: Not just a man thing - Mike Pitts Digging Deeper
+ * - millercenter.org
+ *     > Herbert Hoover: Campaigns and Elections | Miller Center
+ * - mosaicprojects.com.au
+ *     > The origins of the Coordinated Universal Time (UTC) calendar - Mosaic Projects
+ * - msu-anthropology.github.io
+ *     > Fred Wendorf
+ * - museum.ie
+ *     > The Winter solstice at Newgrange | National Museum of Ireland
+ * - mythicalireland.com
+ *     > 101 Facts about Newgrange - Mythical Ireland
+ * - nationaldaycalendar.com
+ *     > FEBRUARY 18 | Birthdays and Events - National Day Calendar
+ * - networkcultures.org
+ *     > marianne van den boomen transcoding the digital how metaphors matter in new media
+ * - newtonproject.ox.ac.uk
+ *     > Observations upon the Prophecies of Daniel and the Apocalypse of St. John (Normalized)
+ * - ninercommons.charlotte.edu
+ *     > COUNTING DAYS IN ANCIENT BABYLON: ECLIPSES, OMENS, AND CALENDRICS DURING THE OLD BABYLONIAN PERIOD (1750-1600 BCE) by Steven Jed
+ * - online.ucpress.edu
+ *     > Temples à Escaliers: The Dura Evidence | Classical Antiquity
+ * - pdfs.semanticscholar.org
+ *     > POLITECNICO DI TORINO Repository ISTITUZIONALE - Semantic Scholar
+ * - penelope.uchicago.edu
+ *     > Roman Calendar
+ * - pmworldlibrary.net
+ *     > The Origins of the Coordinated Universal Time (UTC) Calendar - PM World Library
+ * - pol-study.com
+ *     > Chapter 6 – Introduction to the Case Studies
+ * - prehistoricsociety.org
+ *     > INTRODUCTION TO PREHISTORY NEOLITHIC FACTSHEET 14 STONEHENGE - The Prehistoric Society
+ * - proteo.hu
+ *     > The Stele of YHWH in Egypt
+ * - quasar.as.utexas.edu
+ *     > Julian Day Number Calculator - Bill Jefferys
+ * - rcin.org.pl
+ *     > The megaliths of Nabta Playa - Digital Repository of Scientific Institutes
+ * - repositorio.uca.edu.ar
+ *     > Cuadernos del Centro de Estudios de Historia del Antiguo Oriente n° 16 2018 - Repositorio Institucional UCA
+ * - research-management.mq.edu.au
+ *     > “THE CABLE GUY”: CONSTANTINE SIMONIDES AND CODEX MAYERIANUS1 - Macquarie University
+ * - resolve.cambridge.org
+ *     > chapter vi - chronology - Cambridge University Press & Assessment
+ * - roger-pearse.com
+ *     > Machine-translated portions of the new Maronite Chronicle of 713 in English - Roger Pearse
+ * - royal.uk
+ *     > Alfred 'The Great' (r. 871-899) | The Royal Family
+ * - scholar.google.com
+ *     > ‪Robert K. Englund‬ - ‪Google Scholar‬
+ * - semanticscholar.org
+ *     > [PDF] Administrative Timekeeping in Ancient Mesopotamia | Semantic Scholar
+ * - shs.cairn.info
+ *     > 17 Ur III texts in a private collection in Paris | Cairn.info
+ * - silburycoins.co.uk
+ *     > Anglo-Saxon Kingdoms: Wessex - Silbury Coins
+ * - simple.wikipedia.org
+ *     > Cenwalh of Wessex - Simple English Wikipedia, the free encyclopedia
+ * - smaam.church
+ *     > What is the Coptic Calendar? - SMAAM Staging
+ * - smu.edu
+ *     > World renowned SMU archaeologist Fred Wendorf has died
+ * - spectrum.library.concordia.ca
+ *     > Investigating the Conceptualization of Divinity in the Eden Narrative (Gen 2 ̶ 3): An Exegetical Project Garner Remy A
+ * - staff.science.uu.nl
+ *     > Almagest Ephemeris Calculator - webspace.science.uu.nl
+ * - t5k.org
+ *     > Prime Curios! 1973
+ * - tandfonline.com
+ *     > Full article: Queries and quaestiones: Edward Lhwyd between Natural History and Natural Philosophy - Taylor & Francis
+ * - thecollector.com
+ *     > What Is the Origin of the Calendar? - TheCollector
+ * - tjaglcs.army.mil
+ *     > Fiscal Law Deskbook (2026) - The Judge Advocate General's Legal Center and School - U.S. Army
+ * - transport.nsw.gov.au
+ *     > 713 AC Feeder October Notification - Transport for NSW
+ * - trismegistos.org
+ *     > TM Time
+ * - trove.nla.gov.au
+ *     > 02 Aug 1930 - In the Land of Nimrod. - Trove
+ * - uni-koeln.de
+ *     > alexander jones calendrica ii: date equations from the reign of augustus
+ * - unleashcb.com
+ *     > 90-Pound Rucksack Challenge | Fundraiser for Crescent Hill Ski Patrol - February 18 - Honey Creek, Iowa - Unleash Council Bluffs
+ * - unofficialroyalty.com
+ *     > British Royals | Unofficial Royalty | Page 34
+ * - uop.whoi.edu
+ *     > Julian Day Table for Non-Leap Years
+ * - upload.wikimedia.org
+ *     > The world's progress : a dictionary of dates - Wikimedia Commons
+ * - uplopen.com
+ *     > 1. POSSIBLE MARKERS OF INAUTHENTICITY IN A GREEK NEW TESTAMENT PAPYRUS: GENUINELY BAD OR A VERY GOOD FAKE? - University Press Library Open
+ * - upskillstutor.com
+ *     > From Roman Calendars to Modern Times: Deciphering the Story Behind February's 28 Days
+ * - uruk-warka.dk
+ *     > nippur نيبور
+ * - uu.diva-portal.org
+ *     > The Urban Mind - https ://uu.diva-portal.org
+ * - viewsproject.wordpress.com
+ *     > Introducing our second new VIEWS researcher
+ * - vikingeskibsmuseet.dk
+ *     > The Anglo-Saxon Chronicle: The Viking Ship Museum - Vikingeskibsmuseet
+ * - vintageapple.org
+ *     > Byte May 1986 - Vintage Apple
+ * - webexhibits.org
+ *     > Early Roman Calendar - Webexhibits
+ * - wncc.edu
+ *     > Events - WNCC Calendar
+ * - wuw.pl
+ *     > Polish Archaeology in the Mediterranean 33
+ * - www-angler.larc.nasa.gov
+ *     > Julian Day Chart for Non-Leap Year
  * 
  * ============================================================================
  * NOTE: this is a standard, it can not be copyrighted in any way.
