@@ -47,6 +47,19 @@
  *   - The astronomical Neolithic computer. Years do not exist here.
  *   - 1 Lap = 56 Julian Years (Exactly 20,454 Days, tracking lunar standstill).
  *   - 1 Hole = 1 Julian Year (~365.25 Days, tracking solar cycles).
+ *   - ANCHORED TO TODAY'S SKY: the whole deep-time count is pinned to the present.
+ *     Because the 56 Aubrey Holes were a lunar instrument, Hole 1 / Lap 1 / Day 1 is
+ *     set to the most recent major lunar standstill: the moment the Moon's mean node
+ *     crossed 0 degrees Aries, on 29 January 2025 (JDN 2460705). Every ancient hole,
+ *     lap and day is extrapolated backwards from that fixed point, so the 18.6-year
+ *     standstill phase matches the real sky exactly for the present. The zero point is
+ *     the standstill, not a solstice, so each Hole's day count begins at the node
+ *     crossing rather than at midsummer - the way the Neolithic builders used the ring.
+ *     The Lap and Hole are mean Julian cycles (56 x 365.25 = 20,454 days): exact near
+ *     the anchor, drifting slowly across deep time, since the tropical year is not
+ *     365.25 days and three nodal cycles total 55.83 years, not 56. The reverse
+ *     conversion takes its phase from the same anchor, so changing the Egyptian epoch
+ *     (which shifts the era boundary) leaves the conversion exact.
  *
  * ERA 1: Sumerian King List (JDN -93407114 to 707685)
  *   - Maps 261,430 years of early Kings (ALULIM to LUGAL-KITUN).
@@ -795,15 +808,17 @@
  * ============================================================================
  */
 
-	const UNITS = ["SEC", "MIN", "HRS", "DAYS", "WEEK", "MON", "YRS", "DEC", "CEN", "MIL", "YWL", "AY", "KUEN", "LAP", "HOL", "SEA"];
-const FS = "\u2044";
-const MONTHS_FULL =["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
-const MONTHS_SHORT =["jan.", "feb.", "mar.", "apr.", "may", "jun.", "jul.", "aug.", "sep.", "oct.", "nov.", "dec."];
 const propertime = (function () {
+	const UNITS = ["SEC", "MIN", "HRS", "DAYS", "WEEK", "MON", "YRS", "DEC", "CEN", "MIL", "YWL", "AY", "KUEN", "LAP", "HOL", "SEA"];
+	const FS = "\u2044";
+	const MONTHS_FULL = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+	const MONTHS_SHORT = ["jan.", "feb.", "mar.", "apr.", "may", "jun.", "jul.", "aug.", "sep.", "oct.", "nov.", "dec."];
 	const EGYPTIAN_EPOCH_2782 = 705497;
 	const EGYPTIAN_EPOCH_2776 = 707686;
 	const EGYPTIAN_EPOCH_2773 = 708785;
 	let currentEgyptianEpoch = EGYPTIAN_EPOCH_2776;
+
+	const UNIVERSAL_ANCHOR = 2460705;
 
 	const EGYPTIAN_SEASONS = ["AKHET", "AKHET", "AKHET", "AKHET", "PERET", "PERET", "PERET", "PERET", "SHEMU", "SHEMU", "SHEMU", "SHEMU"];
 
@@ -1751,8 +1766,7 @@ const propertime = (function () {
 	function jdnToStonehenge(jdn) {
 		let sumerianStartJdn = currentEgyptianEpoch - (SUMERIAN_TOTAL_YEARS * 360);
 		if (jdn >= sumerianStartJdn) return null;
-		
-		const UNIVERSAL_ANCHOR = 2461208;
+
 		const cycleLength = 20454;
 		
 		let firstStonehengeDay = sumerianStartJdn - 1;
@@ -1800,9 +1814,10 @@ const propertime = (function () {
 		let absoluteDays = Math.floor(((hole - 1) * 1461) / 4) + days - 1;
 		let daysWithinLap = cycleLength - absoluteDays;
 		if (daysWithinLap === cycleLength) daysWithinLap = 0;
-		let rem = (daysWithinLap - 16865 + 20454) % 20454;
-		let daysBeforeBoundary = (lapse - 1) * 20454 + rem;
 		let firstStonehengeDay = currentEgyptianEpoch - (SUMERIAN_TOTAL_YEARS * 360) - 1;
+		let phase = (((UNIVERSAL_ANCHOR - firstStonehengeDay) % cycleLength) + cycleLength) % cycleLength;
+		let rem = (((daysWithinLap - phase) % cycleLength) + cycleLength) % cycleLength;
+		let daysBeforeBoundary = (lapse - 1) * cycleLength + rem;
 		return firstStonehengeDay - daysBeforeBoundary;
 	}
 
@@ -2034,28 +2049,15 @@ const propertime = (function () {
 
 				return len;
 			}
-			while (tempSec >= 86400) {
-				tempSec -= 86400;
+			while (tempSec >= getDayLen(jdn)) {
+				tempSec -= getDayLen(jdn);
 				jdn++;
-			}
-			while (tempSec < 0) {
-				jdn--;
-				tempSec += 86400;
-			}
-			
-			if (tempSec >= getDayLen(jdn)) {
-				if (n >= 0) {
-					tempSec = 0;
-					jdn++;
-				} else {
-					tempSec = getDayLen(jdn) - 1; 
-				}
 			}
 			while (tempSec < 0) {
 				jdn--;
 				tempSec += getDayLen(jdn);
 			}
-
+			
 			let datePart = jdnToYmd(jdn);
 			y = datePart.y;
 			m = datePart.m;
