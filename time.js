@@ -808,11 +808,8 @@ const propertime = (function () {
 	const EGYPTIAN_SEASONS = ["AKHET", "AKHET", "AKHET", "AKHET", "PERET", "PERET", "PERET", "PERET", "SHEMU", "SHEMU", "SHEMU", "SHEMU"];
 
 	const SUMERIAN_KINGS = [
-		// ── Antediluvian Kings (before the Flood) ──
 		["ALULIM", 28800], ["ALALGAR", 36000], ["EN-MEN-LU-ANA", 43200], ["EN-MEN-GAL-ANA", 28800], ["DUMUZID-SIPAD", 36000], ["EN-SIPAD-ZID-ANA", 28800], ["EN-MEN-DUR-ANA", 21000], ["UBARA-TUTU", 18600],
-		// ── First Dynasty of Kiš (post-flood) ──
 		["ĜUȘUR", 1200], ["POLYARKIE", 960], ["NANĜIȘLIȘMA", 670], ["EN-TARAḪ-ANA", 420], ["BABUM", 300], ["PUANNUM", 840], ["KALIBUM", 900], ["KALUMUM", 840], ["ZUQAQIP", 900], ["ATAB", 600], ["MAȘDA", 840], ["ARWIUM", 720], ["ETANA", 1500], ["BALIḪ", 400], ["EN-ME-NUNA", 660], ["MELEM-KIȘ", 900], ["BARSAL-NUNA", 1200], ["ZAMUG", 140], ["TIZQAR", 305], ["ILKU", 900], ["ILTASADUM", 1200], ["EN-ME-BARAGE-SI", 900], ["AGA", 625],
-		// ── First Dynasty of Uruk ──
 		["MEȘ-KI-AĜ-GAȘER", 324], ["ENMERKAR", 420], ["LUGALBANDA", 1200], ["DUMUZID", 100], ["BILGAMEȘ", 126], ["UR-NUN-GAL", 30], ["UDUL-KALAMA", 15], ["LA-BA'ȘUM", 9], ["EN-NUN-TARAḪ-ANA", 8], ["MEȘ-ḪE", 36], ["MELEM-ANA", 6], ["LUGAL-KITUN", 36]
 	];
 	const SUMERIAN_TOTAL_YEARS = 261430;
@@ -1662,7 +1659,6 @@ const propertime = (function () {
 		}
 		
 		let mObj = null;
-		// Check Egyptian Kings first!
 		if (jdn >= currentEgyptianEpoch && jdn < 1446501) {
 			let currentEgJdn = currentEgyptianEpoch;
 			let totalAssignedYears = 0;
@@ -1671,7 +1667,7 @@ const propertime = (function () {
             for (let i = 0; i < EGYPTIAN_KINGS.length; i++) {
 				let reignDays = Math.floor((EGYPTIAN_KINGS[i][1] / totalAssignedYears) * (1446501 - currentEgyptianEpoch));
 				if (i === EGYPTIAN_KINGS.length - 1) {
-					reignDays = 1446501 - currentEgJdn; // grab all remaining days
+					reignDays = 1446501 - currentEgJdn;
 				}
 				if (jdn >= currentEgJdn && jdn < currentEgJdn + reignDays) {
 					mObj = { prima: EGYPTIAN_KINGS[i][0], secunda: '', jdnstr: currentEgJdn, jdnend: currentEgJdn + reignDays - 1 };
@@ -1695,7 +1691,7 @@ const propertime = (function () {
 			let dayInYear = daysIntoKing % 365;
 			let month = Math.floor(dayInYear / 30) + 1;
 			let day = (dayInYear % 30) + 1;
-			if (month > 12) month = 12; // Cap at month 12 for epagomenal days
+			if (month > 12) month = 12;
 			return { prima: mObj.prima, secunda: '', year: regnalYear, month: month, day: day };
 		}
 
@@ -1713,8 +1709,6 @@ const propertime = (function () {
 		let start;
 		
 		if (jdn >= 2361222 && startJdn < 2361222) {
-			// Crosses the Julian/Gregorian gap.
-			// We must normalize the start date to New Style to prevent the regnal duration from skipping 11 days.
 			let j = startJdn;
 			let f = j + 1401;
 			f += Math.floor((Math.floor((4 * j + 274277) / 146097) * 3) / 4) - 38;
@@ -2094,11 +2088,13 @@ const propertime = (function () {
 			this.sec = d.sec;
 			this.ampm = d.ampm;
 			this.tag = d.tag || "";
+			this.verbose = d.verbose || false;
 		}
 
 		add(n, unit) {
 			let newPt = new ProperTime(_addStep(this, n, unit));
 			newPt.tag = this.tag;
+			newPt.verbose = this.verbose;
 			return newPt;
 		}
 
@@ -2297,10 +2293,30 @@ const propertime = (function () {
 					let decan = Math.floor((eg.day - 1) / 10) + 1;
 					let dayInDecan = ((eg.day - 1) % 10) + 1;
 					
-					egFormal = `${getEnOrdinal(ey)} YRS’s ${season}’s ${getEnOrdinal(monthInSeason)} MON’s ${getEnOrdinal(decan)} DEC’s ${getEnOrdinal(dayInDecan)} DAYS${timeSuffix}`;
+					if (this.verbose) {
+						egFormal = `${getEnOrdinal(ey)} YRS’s ${season}’s ${getEnOrdinal(monthInSeason)} MON’s ${getEnOrdinal(decan)} DEC’s ${getEnOrdinal(dayInDecan)} DAYS${timeSuffix}`;
+					} else {
+						let parts = [];
+						if (ey !== 1) parts.push(`${getEnOrdinal(ey)} YRS`);
+						parts.push(`${season}`);
+						if (monthInSeason !== 1) parts.push(`${getEnOrdinal(monthInSeason)} MON`);
+						if (decan !== 1) parts.push(`${getEnOrdinal(decan)} DEC`);
+						if (dayInDecan !== 1) parts.push(`${getEnOrdinal(dayInDecan)} DAYS`);
+						if (parts.length === 1) parts.push(`${getEnOrdinal(dayInDecan)} DAYS`);
+						egFormal = `${parts.join("’s ")}${timeSuffix}`;
+					}
 					egShort = `${ey} ${seasonNum}${FS}${monthInSeason}\u2010${decan}${FS}${dayInDecan}`;
 				} else {
-					egFormal = `${getEnOrdinal(ey)} YRS’s HRYW RNPT’s ${getEnOrdinal(eg.day)} DAYS${timeSuffix}`;
+					if (this.verbose) {
+						egFormal = `${getEnOrdinal(ey)} YRS’s HRYW RNPT’s ${getEnOrdinal(eg.day)} DAYS${timeSuffix}`;
+					} else {
+						let parts = [];
+						if (ey !== 1) parts.push(`${getEnOrdinal(ey)} YRS`);
+						parts.push(`HRYW RNPT`);
+						if (eg.day !== 1) parts.push(`${getEnOrdinal(eg.day)} DAYS`);
+						if (parts.length === 1) parts.push(`${getEnOrdinal(eg.day)} DAYS`);
+						egFormal = `${parts.join("’s ")}${timeSuffix}`;
+					}
 					egShort = `${ey}HW${eg.day}`;
 				}
 			}
@@ -2310,7 +2326,16 @@ const propertime = (function () {
 			let suShort = "—";
 			
 			if (su) {
-				suFormal = `${su.kingName}’s ${getEnOrdinal(su.year)} YRS’s ${getEnOrdinal(su.month)} MON’s ${getEnOrdinal(su.day)} DAYS${timeSuffix}`;
+				if (this.verbose) {
+					suFormal = `${su.kingName}’s ${getEnOrdinal(su.year)} YRS’s ${getEnOrdinal(su.month)} MON’s ${getEnOrdinal(su.day)} DAYS${timeSuffix}`;
+				} else {
+					let parts = [];
+					if (su.year !== 1) parts.push(`${getEnOrdinal(su.year)} YRS`);
+					if (su.month !== 1) parts.push(`${getEnOrdinal(su.month)} MON`);
+					if (su.day !== 1) parts.push(`${getEnOrdinal(su.day)} DAYS`);
+					if (parts.length === 0) parts.push(`${getEnOrdinal(su.day)} DAYS`);
+					suFormal = `${su.kingName}’s ${parts.join("’s ")}${timeSuffix}`;
+				}
 				suShort = `${su.kingId} ${su.year}\u2011${su.month}${FS}${su.day}`;
 			}
 
@@ -2319,7 +2344,16 @@ const propertime = (function () {
 			let shShort = "—";
 			
 			if (sh) {
-				shFormal = `${getEnOrdinal(sh.lapse)} LAP’s ${getEnOrdinal(sh.hole)} HOL’s ${getEnOrdinal(sh.days)} DAYS${timeSuffix}`;
+				if (this.verbose) {
+					shFormal = `${getEnOrdinal(sh.lapse)} LAP’s ${getEnOrdinal(sh.hole)} HOL’s ${getEnOrdinal(sh.days)} DAYS${timeSuffix}`;
+				} else {
+					let parts = [];
+					if (sh.lapse !== 1) parts.push(`${getEnOrdinal(sh.lapse)} LAP`);
+					if (sh.hole !== 1) parts.push(`${getEnOrdinal(sh.hole)} HOL`);
+					if (sh.days !== 1) parts.push(`${getEnOrdinal(sh.days)} DAYS`);
+					if (parts.length === 0) parts.push(`${getEnOrdinal(sh.days)} DAYS`);
+					shFormal = `${parts.join("’s ")}${timeSuffix}`;
+				}
 				shShort = `${sh.lapse}\u2011${sh.hole}${FS}${sh.days}`;
 			}
 
@@ -2329,7 +2363,16 @@ const propertime = (function () {
 
 			if (er) {
 				let kingStr = er.secunda ? `${er.prima} WITH ${er.secunda}` : er.prima;
-				erFormal = `${kingStr}’s ${getEnOrdinal(er.year)} YRS’s ${getEnOrdinal(er.month)} MON’s ${getEnOrdinal(er.day)} DAYS${timeSuffix}`;
+				if (this.verbose) {
+					erFormal = `${kingStr}’s ${getEnOrdinal(er.year)} YRS’s ${getEnOrdinal(er.month)} MON’s ${getEnOrdinal(er.day)} DAYS${timeSuffix}`;
+				} else {
+					let parts = [];
+					if (er.year !== 1) parts.push(`${getEnOrdinal(er.year)} YRS`);
+					if (er.month !== 1) parts.push(`${getEnOrdinal(er.month)} MON`);
+					if (er.day !== 1) parts.push(`${getEnOrdinal(er.day)} DAYS`);
+					if (parts.length === 0) parts.push(`${getEnOrdinal(er.day)} DAYS`);
+					erFormal = `${kingStr}’s ${parts.join("’s ")}${timeSuffix}`;
+				}
 				erShort = `${kingStr}\u2011${er.year}${FS}${er.month}${FS}${er.day}`;
 			}
 
@@ -2341,7 +2384,7 @@ const propertime = (function () {
 		}
 	}
 
-	const ptFunc = function propertime(input, off_set_japan = "", is_day_time_saving = false) {
+	const ptFunc = function propertime(input, off_set_japan = "", is_day_time_saving = false, verbose = false) {
 		let offsetSeconds = 0;
 		if (typeof off_set_japan === "string" && off_set_japan.trim() !== "") {
 			let str = off_set_japan.trim().toUpperCase();
@@ -2498,7 +2541,7 @@ const propertime = (function () {
 				let min = pad(parseInt(tMatch[1]));
 				let sec = pad(parseInt(tMatch[2]));
 				let ampm = tMatch[3].toUpperCase();
-				return new ProperTime({ year: ymd.y.toString(), month: pad(ymd.m), day: pad(ymd.d), hr, min, sec, ampm }).add(offsetSeconds, "SEC");
+				return new ProperTime({ year: ymd.y.toString(), month: pad(ymd.m), day: pad(ymd.d), hr, min, sec, ampm, verbose }).add(offsetSeconds, "SEC");
 			}
 
 			let inputTag = input.toUpperCase();
@@ -2586,7 +2629,7 @@ const propertime = (function () {
 				throw new Error(`Invalid date.`);
 			}
 
-			return new ProperTime({ year: ay.toString(), month: pad(targetMonth), day: pad(targetDay), hr: pad(hr), min: pad(min), sec: pad(sec), ampm, tag: resolvedTag }).add(offsetSeconds, "SEC");
+			return new ProperTime({ year: ay.toString(), month: pad(targetMonth), day: pad(targetDay), hr: pad(hr), min: pad(min), sec: pad(sec), ampm, tag: resolvedTag, verbose }).add(offsetSeconds, "SEC");
 		}
 
 		const now = new Date();
@@ -2634,6 +2677,7 @@ const propertime = (function () {
 			min: pad(n_min),
 			sec: pad(n_sec),
 			ampm: ampm,
+			verbose: verbose
 		}).add(offsetSeconds, "SEC");
 	};
 
@@ -2777,13 +2821,13 @@ const propertime = (function () {
 		for (let m = 0; m < 12; m++) {
 			let numDays = monthDays[m];
 			let weekdays = [];
-			let weekendCols = []; // 0-indexed column positions that are weekends
+			let weekendCols = [];
 			
 			for (let d = 1; d <= 7; d++) {
 				let jsDate = new Date(y, m, d);
 				let dayOfWeek = jsDate.getDay();
 				weekdays.push(dayNames[dayOfWeek]);
-				if (dayOfWeek === 0 || dayOfWeek === 6) { // Sunday or Saturday
+				if (dayOfWeek === 0 || dayOfWeek === 6) {
 					weekendCols.push(d - 1);
 				}
 			}
@@ -2804,7 +2848,7 @@ const propertime = (function () {
 				if (rowData.length > 0) rows.push(rowData);
 			}
 			
-			wknds[m + 1] = monthWknds; // Month is 1-indexed for the API
+			wknds[m + 1] = monthWknds;
 			
 			let emptyColspan = 0;
 			let lastRow = rows[rows.length - 1];
