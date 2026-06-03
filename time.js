@@ -2104,15 +2104,18 @@ const propertime = (function () {
 				day = parseInt(this.day);
 			let py = ay;
 			
-			let ladyDayShift = false;
-			if (this.tag === "O.S.") ladyDayShift = true;
-			else if (this.tag === "N.S.") ladyDayShift = false;
-			else if (ay >= 1155 && ay <= 1751) ladyDayShift = true;
+			if (this.tag === "O.S." && ay === 1752 && (m === 1 || m === 2 || (m === 3 && day < 25))) {
+				py = 1751;
+			}
+			if (this.tag === "O.S." && ay === 1155 && (m === 1 || m === 2 || (m === 3 && day < 25))) {
+				py = 1154;
+			}
+			if (ay === 1752 && this.tag === "") {
+				if (m === 1 || m === 2 || (m === 3 && day < 25)) py = 1751;
+			}
 			
-			if (ay >= 1752) ladyDayShift = false;
-			
-			if (ladyDayShift && (m === 1 || m === 2 || (m === 3 && day < 25))) {
-				py = ay - 1;
+			if (this.tag === "N.S." && ay < 1155) {
+				py += 1;
 				if (py === 0) py = -1;
 			}
 			
@@ -2120,17 +2123,51 @@ const propertime = (function () {
 				py = 1154;
 			}
 			
+			let isBeforeBirth = false;
+			if (py < -4) {
+				isBeforeBirth = true;
+			} else if (py === -4) {
+				if (m < 12) isBeforeBirth = true;
+				else if (m === 12 && day < 24) isBeforeBirth = true;
+			}
+			
 			let suffix = "";
+			
+			if (is_he) {
+				let heY = py + 10000;
+				let heStr;
+				
+				if (heY <= 0) {
+					let absHe = Math.abs(heY - 1);
+					heStr = absHe.toString();
+					suffix = " A.C. I.P.";
+				} else {
+					heStr = heY.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0");
+					if (isBeforeBirth) suffix = " A.C.";
+				}
+				
+				let absY = Math.abs(py);
+				if (py < 0) {
+					if (absY >= 46 && absY <= 80) suffix += " O.S.";
+					else if (absY >= 20 && absY <= 45) suffix += " N.S.";
+				} else if (ay === 1752) {
+					if (m < 9 || (m === 9 && day <= 2)) suffix += " O.S.";
+					else suffix += " N.S.";
+				} else if (this.tag === "O.S." || this.tag === "N.S.") {
+					suffix += " " + this.tag;
+				} else if (ay >= 1740 && ay <= 1760) {
+					if (ay < 1752) suffix += " O.S.";
+					else suffix += " N.S.";
+				} else if (ay >= 1145 && ay <= 1165) {
+					if (ay < 1155) suffix += " N.S.";
+					else suffix += " O.S.";
+				}
+				
+				return { displayYear: heStr, suffix: suffix };
+			}
+			
 			if (ay < 0 || py < 0) {
 				let absY = Math.abs(py);
-				
-				let isBeforeBirth = false;
-				if (py < -4) {
-					isBeforeBirth = true;
-				} else if (py === -4) {
-					if (m < 12) isBeforeBirth = true;
-					else if (m === 12 && day < 24) isBeforeBirth = true;
-				}
 				
 				if (absY >= 1 && absY <= 25) {
 					if (isBeforeBirth) {
@@ -2154,12 +2191,6 @@ const propertime = (function () {
 			} else if (ay >= 1145 && ay <= 1165) {
 				if (ay < 1155) suffix = " N.S.";
 				else suffix = " O.S.";
-			}
-
-			if (is_he) {
-				if (ay <= -10000) return { displayYear: "", suffix: "", useCanon: true };
-				let heStr = (ay + 10000).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0");
-				return { displayYear: heStr, suffix: suffix };
 			}
 
 			return { displayYear: Math.abs(py).toString(), suffix };
