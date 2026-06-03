@@ -43,14 +43,32 @@
  * ----------------------------------------------------------------------------
  * The timeline tracking spans seamlessly across deep history:
  *
- * ERA 0: Deep Stonehenge (JDN < -6575114)
+ * ERA 0: Deep Stonehenge (JDN < -93407114)
  *   - The astronomical Neolithic computer. Years do not exist here.
  *   - 1 Lap = 56 Julian Years (Exactly 20,454 Days, tracking lunar standstill).
  *   - 1 Hole = 1 Julian Year (~365.25 Days, tracking solar cycles).
  *
- * ERA 1: Sumerian King List (JDN -6575114 to 707685)
- *   - Maps 20,230 years of early Kings (JUSHUR to LUGAL-KITUN).
+ * ERA 1: Sumerian King List (JDN -93407114 to 707685)
+ *   - Maps 261,430 years of early Kings (ALULIM to LUGAL-KITUN).
  *   - 360-day years composed of twelve 30-day months.
+ *   - SOURCING METHODOLOGY: We are trusting the scribe of the Weld-Blundell Prism 
+ *     (WB-444, c. 1800 BCE) over other inscriptions for these exact numbers. 
+ *     We do this because WB-444 provides the most complete, intact sequence compared
+ *     to MS Su2.
+ *     While the later Uruk I kings (the 7 rulers after Bilgameš) lack archaeological 
+ *     evidence and possess mathematically suspicious, realistic reigns (unlike their 
+ *     mythically inflated predecessors), they were engineered by ancient scribes as 
+ *     chronographic "gap-fillers" to seamlessly bridge Uruk to Ur. By trusting WB-444 
+ *     as written, we respect their original intent and maintain a continuous, unbroken 
+ *     mathematical coordinate system, rather than attempting a modern archaeological 
+ *     reconstruction that would leave a 140-year hole in the timeline.
+ *   - NOTE: This implementation utilizes the Sumerian Administrative Calendar,
+ *     which was strictly designed for kings and the clergy, not the agricultural 
+ *     farmer's calendar. 
+ *   - NOTE: This format is a extrapolation intended to closely approximate 
+ *     historical reality. While the literal terminology may differ from their exact language, 
+ *     a Sumerian cleric of that era would likely recognize and understand the core 
+ *     structural properties of the years mapped here.
  *
  * ERA 2: Egyptian Sothic Calendar (JDN 707686 to 1460919)
  *   - 365 days exactly. 12 months, 3 seasons (AKHET, PERET, SHEMU).
@@ -77,7 +95,7 @@
  * ----------------------------------------------------------------------------
  * WARNING: The Old Turkic format is an alternate linguistic overlay, not an 
  * isolated era standard. This means it actively calculates continuously across 
- * the entire mathematical timeline. You can legitimately extract Old Turkic 
+ * the entire timeline. You can legitimately extract Old Turkic 
  * translations for ancient A.C. dates.
  * 
  * - Animal Years (12-year cycle): BIČIN (Monkey), TAKAGU (Rooster), WT (Dog), TONGUZ (Pig),
@@ -269,7 +287,7 @@
  * ============================================================================
  */
 
-	const UNITS =["SEC", "MIN", "HRS", "DAYS", "WEEK", "MON", "YRS", "DEC", "CEN", "MIL", "YWL", "AY", "KUEN", "LAP", "HOL"];
+	const UNITS = ["SEC", "MIN", "HRS", "DAYS", "WEEK", "MON", "YRS", "DEC", "CEN", "MIL", "YWL", "AY", "KUEN", "LAP", "HOL", "SEA"];
 const FS = "\u2044";
 const MONTHS_FULL =["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
 const MONTHS_SHORT =["jan.", "feb.", "mar.", "apr.", "may", "jun.", "jul.", "aug.", "sep.", "oct.", "nov.", "dec."];
@@ -279,14 +297,14 @@ const propertime = (function () {
 	const EGYPTIAN_EPOCH_2773 = 708785;
 	let currentEgyptianEpoch = EGYPTIAN_EPOCH_2776;
 
-	const EGYPTIAN_MONTHS = ["ÞOÞ", "PHAOPHI", "AÞYR", "CHOIAK", "TYBI", "MECHIR", "PHAMENOÞ", "PHARMUÞI", "PACHONS", "PAYNI", "EPIPHI", "MESORE"];
 	const EGYPTIAN_SEASONS = ["AKHET", "AKHET", "AKHET", "AKHET", "PERET", "PERET", "PERET", "PERET", "SHEMU", "SHEMU", "SHEMU", "SHEMU"];
 
 	const SUMERIAN_KINGS = [
-		["JUSHUR", 1200], ["KULLASSINA-BEL", 960], ["NANGISHLISHMA", 670], ["EN-TARAH-ANA", 420], ["BABUM", 300], ["PUANNUM", 840], ["KALIBUM", 900], ["KALUMUM", 840], ["ZUQAQIP", 900], ["ATAB", 600], ["MASHDA", 840], ["ARWIUM", 720], ["ETANA", 1500], ["BALIH", 400], ["ENME-NUNA", 660], ["MELEM-KISH", 900], ["BARSAL-NUNA", 1200], ["SAMUG", 140], ["TIZKAR", 305], ["ILKU'U", 900], ["ILTA-SADUM", 1200], ["ENMEBARAGESI", 900], ["AGA", 625],
-		["MESH-KI-ANG-GASHER", 324], ["ENMERKAR", 420], ["LUGALBANDA", 1200], ["DUMUZID", 100], ["GILGAMESH", 126], ["UR-NUNGAL", 30], ["UDUL-KALAMA", 15], ["LA-BA'SHUM", 9], ["EN-NUN-TARAH-ANA", 8], ["MESH-HE", 36], ["MELEM-ANA", 6], ["LUGAL-KITUN", 36]
+		["ALULIM", 28800], ["ALALGAR", 36000], ["EN-MEN-LU-ANA", 43200], ["EN-MEN-GAL-ANA", 28800], ["DUMUZID-SIPAD", 36000], ["EN-SIPAD-ZID-ANA", 28800], ["EN-MEN-DUR-ANA", 21000], ["UBARA-TUTU", 18600],
+		["ĜUȘUR", 1200], ["POLYARKIE", 960], ["NANĜIȘLIȘMA", 670], ["EN-TARAḪ-ANA", 420], ["BABUM", 300], ["PUANNUM", 840], ["KALIBUM", 900], ["KALUMUM", 840], ["ZUQAQIP", 900], ["ATAB", 600], ["MAȘDA", 840], ["ARWIUM", 720], ["ETANA", 1500], ["BALIḪ", 400], ["EN-ME-NUNA", 660], ["MELEM-KIȘ", 900], ["BARSAL-NUNA", 1200], ["ZAMUG", 140], ["TIZQAR", 305], ["ILKU", 900], ["ILTASADUM", 1200], ["EN-ME-BARAGE-SI", 900], ["AGA", 625],
+		["MEȘ-KI-AĜ-GAȘER", 324], ["ENMERKAR", 420], ["LUGALBANDA", 1200], ["DUMUZID", 100], ["BILGAMEȘ", 126], ["UR-NUN-GAL", 30], ["UDUL-KALAMA", 15], ["LA-BA'ȘUM", 9], ["EN-NUN-TARAḪ-ANA", 8], ["MEȘ-ḪE", 36], ["MELEM-ANA", 6], ["LUGAL-KITUN", 36]
 	];
-	const SUMERIAN_TOTAL_YEARS = 20230;
+	const SUMERIAN_TOTAL_YEARS = 261430;
 
 	function jdnToSumerian(jdn) {
 		let endJdn = currentEgyptianEpoch - 1;
@@ -325,8 +343,8 @@ const propertime = (function () {
 		let sumerianStartJdn = currentEgyptianEpoch - (SUMERIAN_TOTAL_YEARS * 360);
 		if (jdn >= sumerianStartJdn) return null;
 		
-		const UNIVERSAL_ANCHOR = 2461208; // Hole 1, Day 1
-		const cycleLength = 20454; // 56 Julian Years (56 * 365.25)
+		const UNIVERSAL_ANCHOR = 2461208;
+		const cycleLength = 20454;
 		
 		let firstStonehengeDay = sumerianStartJdn - 1;
 		
@@ -352,7 +370,7 @@ const propertime = (function () {
 		let daysSinceEpoch = jdn - currentEgyptianEpoch;
 		if (daysSinceEpoch < 0) return null;
 		
-		const ROMAN_START_JDN = 1460920; // 713 A.C.
+		const ROMAN_START_JDN = 1460920;
 		if (jdn >= ROMAN_START_JDN) return null;
 		
 		let year = Math.floor(daysSinceEpoch / 365) + 1;
@@ -660,10 +678,13 @@ const propertime = (function () {
 			this.min = d.min;
 			this.sec = d.sec;
 			this.ampm = d.ampm;
+			this.tag = d.tag || "";
 		}
 
 		add(n, unit) {
-			return new ProperTime(_addStep(this, n, unit));
+			let newPt = new ProperTime(_addStep(this, n, unit));
+			newPt.tag = this.tag;
+			return newPt;
 		}
 
 		getMeta(is_he = false) {
@@ -671,22 +692,37 @@ const propertime = (function () {
 				m = parseInt(this.month),
 				day = parseInt(this.day);
 			let py = ay;
-			if (ay >= 1155 && ay <= 1751 && (m === 1 || m === 2 || (m === 3 && day < 25))) {
+			
+			let ladyDayShift = false;
+			if (this.tag === "O.S.") ladyDayShift = true;
+			else if (this.tag === "N.S.") ladyDayShift = false;
+			else if (ay >= 1155 && ay <= 1751) ladyDayShift = true;
+			
+			if (ay >= 1752) ladyDayShift = false;
+			
+			if (ladyDayShift && (m === 1 || m === 2 || (m === 3 && day < 25))) {
 				py = ay - 1;
 				if (py === 0) py = -1;
 			}
+			
+			if (this.tag === "N.S." && ay === 1155 && (m === 1 || m === 2 || (m === 3 && day < 25))) {
+				py = 1154;
+			}
+			
 			let suffix = "";
 			if (ay < 0 || py < 0) {
 				suffix = " A.C.";
 				let absY = Math.abs(py);
 				if (absY >= 46 && absY <= 80) suffix += " O.S.";
 				else if (absY >= 20 && absY <= 45) suffix += " N.S.";
+			} else if (ay === 1752) {
+				if (m < 9 || (m === 9 && day <= 2)) suffix = " O.S.";
+				else suffix = " N.S.";
+			} else if (this.tag === "O.S." || this.tag === "N.S.") {
+				suffix = " " + this.tag;
 			} else if (ay >= 1740 && ay <= 1760) {
 				if (ay < 1752) suffix = " O.S.";
-				else if (ay === 1752) {
-					if (m < 9 || (m === 9 && day <= 2)) suffix = " O.S.";
-					else suffix = " N.S.";
-				} else suffix = " N.S.";
+				else suffix = " N.S.";
 			} else if (ay >= 1145 && ay <= 1165) {
 				if (ay < 1155) suffix = " N.S.";
 				else suffix = " O.S.";
@@ -701,17 +737,19 @@ const propertime = (function () {
 			return { displayYear: Math.abs(py).toString(), suffix };
 		}
 
-		toString(is_he = false) {
+		toString(is_he = false, force_roman = false) {
 			const meta = this.getMeta(is_he);
-			if (meta.useCanon) {
-				let alts = this.toAltFormats();
-				if (alts[16] !== "—") return alts[16];
-				if (alts[14] !== "—") return alts[14];
+			let ay = parseInt(this.year);
+			let jdn = ymdToJdn(ay, parseInt(this.month), parseInt(this.day));
+			
+			if (meta.useCanon || (!force_roman && jdn < 1460920)) {
+				let alts = this.toAltFormats(is_he, force_roman);
+				return alts[0];
 			}
 			return `${meta.displayYear} ${this.month}${FS}${this.day} ${this.hr}:${this.min}:${this.sec} ${this.ampm}${meta.suffix}`;
 		}
 
-		toAltFormats(is_he = false) {
+		toAltFormats(is_he = false, force_roman = false) {
 			const meta = this.getMeta(is_he);
 			let ay = parseInt(this.year);
 			let mi = parseInt(this.month);
@@ -819,7 +857,6 @@ const propertime = (function () {
 
 			if (eg) {
 				let ey = eg.year;
-				let mName = EGYPTIAN_MONTHS[eg.month - 1] || "MESORE";
 				let season = EGYPTIAN_SEASONS[eg.month - 1] || "SHEMU";
 				let seasonNum = Math.floor((Math.min(eg.month, 12) - 1) / 4) + 1;
 				let monthInSeason = ((Math.min(eg.month, 12) - 1) % 4) + 1;
@@ -828,11 +865,11 @@ const propertime = (function () {
 					let decan = Math.floor((eg.day - 1) / 10) + 1;
 					let dayInDecan = ((eg.day - 1) % 10) + 1;
 					
-					egFormal = `${getEnOrdinal(ey)} YRS’s ${season}’s ${mName}’s ${getEnOrdinal(decan)} DEC’s ${dayInDecan} DAYS${timeSuffix}`;
+					egFormal = `${getEnOrdinal(ey)} YRS’s ${season}’s ${getEnOrdinal(monthInSeason)} MON’s ${getEnOrdinal(decan)} DEC’s ${getEnOrdinal(dayInDecan)} DAYS${timeSuffix}`;
 					egShort = `${ey} ${seasonNum}${FS}${monthInSeason}\u2010${decan}${FS}${dayInDecan}`;
 				} else {
-					egFormal = `${getEnOrdinal(ey)} YRS’s SHEMU’s MESORE 4ᵗʰ DEC’s ${eg.day} DAYS A.V.${timeSuffix}`;
-					egShort = `${ey} 3${FS}4\u20104${FS}${eg.day} A.V.`;
+					egFormal = `${getEnOrdinal(ey)} YRS’s HRYW RNPT’s ${getEnOrdinal(eg.day)} DAYS${timeSuffix}`;
+					egShort = `${ey}HW${eg.day}`;
 				}
 			}
 
@@ -854,8 +891,8 @@ const propertime = (function () {
 				shShort = `${sh.lapse}\u2011${sh.hole}${FS}${sh.days}`;
 			}
 
-			if (meta.useCanon) {
-				let canon = shFormal !== "—" ? shFormal : (suFormal !== "—" ? suFormal : "—");
+			if (meta.useCanon || (!force_roman && jdn < 1460920)) {
+				let canon = shFormal !== "—" ? shFormal : (suFormal !== "—" ? suFormal : (egFormal !== "—" ? egFormal : "—"));
 				return [canon, canon, canon, canon, canon, canon, canon, canon, canon, canon, trFormat, enFormat, egFormal, egShort, suFormal, suShort, shFormal, shShort];
 			}
 			return[`${meta.displayYear}/${this.month}/${this.day}`, `${meta.displayYear} ${this.month}/${this.day}`, `${meta.displayYear}${this.month}${this.day}`, `${meta.displayYear}${m}${dy}`, `${meta.displayYear}${this.month}${dy}`, `${meta.displayYear}${m}${this.day}`, `${meta.displayYear} ${mf} ${this.day}`, `${meta.displayYear} ${mf} ${dy}`, `${meta.displayYear} ${ms} ${dy}`, `${meta.displayYear} ${ms} ${this.day}`, trFormat, enFormat, egFormal, egShort, suFormal, suShort, shFormal, shShort];
@@ -885,10 +922,74 @@ const propertime = (function () {
 			offsetSeconds += 3600;
 		}
 
-		if (input) {
+		if (typeof input === "object" && input !== null && !(input instanceof ptFunc)) {
+			if (input.STRING !== undefined) {
+				input = input.STRING.trim();
+			} else {
+				let u = {};
+				for (let unit of UNITS) {
+					if (input[unit] !== undefined) u[unit] = input[unit];
+				}
+				
+				function getEnOrdinal(n) {
+					let v = n % 100;
+					if (v >= 11 && v <= 13) return n + "ᵗʰ";
+					let last = n % 10;
+					if (last === 1) return n + "ˢᵗ";
+					if (last === 2) return n + "ⁿᵈ";
+					if (last === 3) return n + "ʳᵈ";
+					return n + "ᵗʰ";
+				}
+				
+				if (u.LAP !== undefined || u.HOL !== undefined) {
+					let l = u.LAP || 1;
+					let h = u.HOL || 1;
+					let d = u.DAYS || 1;
+					let hrNum = (u.HRS || "00").replace(/AM|PM/i, "").padStart(2, '0');
+					let ampm = (u.HRS || "AM").toUpperCase().includes("PM") ? "PM" : "AM";
+					let m = (u.MIN || 1).toString().padStart(2, '0');
+					let s = (u.SEC || 1).toString().padStart(2, '0');
+					input = `${getEnOrdinal(l)} LAP’s ${getEnOrdinal(h)} HOL’s ${getEnOrdinal(d)} DAYS ${hrNum}:${m}:${s} ${ampm}`;
+				} else if (u.DEC !== undefined || u.SEA !== undefined) {
+					let y = u.YRS !== undefined ? u.YRS : 1;
+					let seaInt = u.SEA || 1; 
+					let mon = u.MON || 1; 
+					let dec = u.DEC || 1; 
+					let d = u.DAYS || 1; 
+					let hrNum = (u.HRS || "00").replace(/AM|PM/i, "").padStart(2, '0');
+					let ampm = (u.HRS || "AM").toUpperCase().includes("PM") ? "PM" : "AM";
+					let m = (u.MIN || 1).toString().padStart(2, '0');
+					let s = (u.SEC || 1).toString().padStart(2, '0');
+					
+					if (seaInt === 4 || (typeof u.SEA === "string" && u.SEA.toUpperCase().includes("HRYW"))) {
+						input = `${getEnOrdinal(y)} YRS’s HRYW RNPT’s ${getEnOrdinal(d)} DAYS ${hrNum}:${m}:${s} ${ampm}`;
+					} else {
+						let season = EGYPTIAN_SEASONS[seaInt - 1] || "SHEMU";
+						input = `${getEnOrdinal(y)} YRS’s ${season}’s ${getEnOrdinal(mon)} MON’s ${getEnOrdinal(dec)} DEC’s ${getEnOrdinal(d)} DAYS ${hrNum}:${m}:${s} ${ampm}`;
+					}
+				} else {
+					let y = (u.YRS !== undefined ? u.YRS : new Date().getFullYear()).toString().trim();
+					let mon = u.MON !== undefined ? u.MON : 1;
+					let d = u.DAYS !== undefined ? u.DAYS : 1;
+					let hr = (u.HRS !== undefined ? u.HRS : "00AM").toString().trim();
+					let hrNum = hr.replace(/AM|PM/i, "").padStart(2, '0');
+					let ampm = hr.toUpperCase().includes("PM") ? "PM" : "AM";
+					let m = (u.MIN !== undefined ? u.MIN : 1).toString().padStart(2, '0');
+					let s = (u.SEC !== undefined ? u.SEC : 1).toString().padStart(2, '0');
+					
+					let yMatch = y.match(/^(-?\d+)(.*)$/);
+					let yNum = yMatch ? yMatch[1] : y;
+					let suffix = yMatch ? yMatch[2].replace(/\s/g, "") : "";
+					
+					input = `${yNum}${mon.toString().padStart(2, '0')}${d.toString().padStart(2, '0')}${hrNum}${m}${s}${ampm}${suffix}`;
+				}
+			}
+		}
+
+		if (typeof input === "string") {
 			let normInput = input.replace(/ /g, "\u00A0").replace(/[-\u2010]/g, "\u2011").trim();
 			
-			const ord = "(?:[ᵗˢⁿʳʰ]+|th|st|nd|rd)?";
+			const ord = "(?:[ᵗˢⁿʳʰᵈ]+|th|st|nd|rd)?";
 			const tStr = "\\u00A0+(0?\\d|1[0-2]):(\\d{2}):(\\d{2,3})\\u00A0+(AM|PM)";
 			
 			const PATTERNS = {
@@ -896,9 +997,9 @@ const propertime = (function () {
 				shShort: new RegExp(`^(\\d+)\\u2011(\\d+)[\\u2044\\/](\\d+)${tStr}$`, "i"),
 				suFormal: new RegExp(`^(.+?)’s\\u00A0(\\d+)${ord}\\u00A0YRS’s\\u00A0(\\d+)${ord}\\u00A0MON’s\\u00A0(\\d+)${ord}\\u00A0DAYS${tStr}$`, "i"),
 				suShort: new RegExp(`^(\\d+)\\u00A0(\\d+)\\u2011(\\d+)[\\u2044\\/](\\d+)${tStr}$`, "i"),
-				egEpagFormal: new RegExp(`^(\\d+)${ord}\\u00A0YRS’s\\u00A0SHEMU’s\\u00A0MESORE\\u00A04${ord}\\u00A0DEC’s\\u00A0(\\d+)${ord}\\u00A0DAYS\\u00A0A\\.V\\.${tStr}$`, "i"),
-				egFormal: new RegExp(`^(\\d+)${ord}\\u00A0YRS’s\\u00A0(AKHET|PERET|SHEMU)’s\\u00A0(.+?)’s\\u00A0(\\d+)${ord}\\u00A0DEC’s\\u00A0(\\d+)${ord}\\u00A0DAYS${tStr}$`, "i"),
-				egEpagShort: new RegExp(`^(\\d+)\\u00A03[\\u2044\\/]4\\u20114[\\u2044\\/](\\d+)\\u00A0A\\.V\\.${tStr}$`, "i"),
+				egEpagFormal: new RegExp(`^(\\d+)${ord}\\u00A0YRS’s\\u00A0HRYW\\u00A0RNPT’s\\u00A0(\\d+)${ord}\\u00A0DAYS${tStr}$`, "i"),
+				egFormal: new RegExp(`^(\\d+)${ord}\\u00A0YRS’s\\u00A0(AKHET|PERET|SHEMU)’s\\u00A0(\\d+)${ord}\\u00A0MON’s\\u00A0(\\d+)${ord}\\u00A0DEC’s\\u00A0(\\d+)${ord}\\u00A0DAYS${tStr}$`, "i"),
+				egEpagShort: new RegExp(`^(\\d+)HW(\\d+)${tStr}$`, "i"),
 				egShort: new RegExp(`^(\\d+)\\u00A0(\\d+)[\\u2044\\/](\\d+)\\u2011(\\d+)[\\u2044\\/](\\d+)${tStr}$`, "i")
 			};
 
@@ -927,10 +1028,9 @@ const propertime = (function () {
 				jdnFound = egyptianToJdn(parseInt(match[1]), 12, parseInt(match[2]), true);
 				tMatch = match.slice(3);
 			} else if ((match = normInput.match(PATTERNS.egFormal))) {
-				let mName = match[3].toUpperCase();
-				let mIdx = EGYPTIAN_MONTHS.indexOf(mName);
-				if (mIdx === -1) throw new Error("Invalid Egyptian Month: " + mName);
-				let month = mIdx + 1;
+				let seasonIdx = ["AKHET", "PERET", "SHEMU"].indexOf(match[2].toUpperCase());
+				let monthInSeason = parseInt(match[3]);
+				let month = seasonIdx * 4 + monthInSeason;
 				let decan = parseInt(match[4]);
 				let dayInDecan = parseInt(match[5]);
 				let day = (decan - 1) * 10 + dayInDecan;
@@ -959,12 +1059,18 @@ const propertime = (function () {
 				return new ProperTime({ year: ymd.y.toString(), month: pad(ymd.m), day: pad(ymd.d), hr, min, sec, ampm }).add(offsetSeconds, "SEC");
 			}
 
+			let inputTag = input.toUpperCase();
+			let suffix = "";
+			if (inputTag.includes("A.C.")) suffix = "A.C.";
+			else if (inputTag.includes("O.S.")) suffix = "O.S.";
+			else if (inputTag.includes("N.S.")) suffix = "N.S.";
+
 			let s = input
 				.replace(/\s/g, "")
 				.replace(/A\.C\./i, "")
 				.replace(/O\.S\./i, "")
 				.replace(/N\.S\./i, "");
-			let isAC = input.toUpperCase().includes("A.C.");
+			let isAC = inputTag.includes("A.C.");
 			let isBC = isAC || s.startsWith("-");
 			if (s.startsWith("-")) s = s.substring(1);
 			if (s.length < 11) throw new Error("Invalid propertime string");
@@ -983,13 +1089,59 @@ const propertime = (function () {
 
 			if (isBC) py = -py;
 
-			let ay = py;
-			if (py >= 1155 && py <= 1750 && (month === 1 || month === 2 || (month === 3 && day < 25))) {
-				ay = py + 1;
-			} else if (py === 1154 && input.toUpperCase().includes("O.S.") && (month === 1 || month === 2 || (month === 3 && day < 25))) {
-				ay = 1155;
+			let resolvedTag = suffix;
+			if (suffix === "O.S." || suffix === "N.S.") {
+				if (py >= 1154 && py <= 1155) {
+				} else if (py === 1752) {
+				} else if (py >= 1145 && py <= 1153) {
+					if (suffix === "O.S.") throw new Error(`Invalid date.`);
+				} else if (py >= 1156 && py <= 1739) {
+					if (suffix === "N.S.") throw new Error(`Invalid date.`);
+				} else if (py >= 1740 && py <= 1751) {
+					if (suffix === "N.S.") throw new Error(`Invalid date.`);
+				} else if (py >= 1753 && py <= 1760) {
+					if (suffix === "O.S.") throw new Error(`Invalid date.`);
+				} else if (py > 1760) {
+					if (suffix === "O.S.") throw new Error(`Invalid date.`);
+				}
+			} else if (!isBC) {
+				if (py >= 1154 && py <= 1155) {
+					throw new Error(`Invalid date.`);
+				} else if (py === 1752) {
+					throw new Error(`Invalid date.`);
+				} else if (py >= 1155 && py <= 1739) {
+					resolvedTag = "O.S.";
+				} else if (py >= 1740 && py <= 1751) {
+					resolvedTag = "O.S.";
+				} else if (py >= 1753 && py <= 1760) {
+					resolvedTag = "N.S.";
+				}
 			}
-			return new ProperTime({ year: ay.toString(), month: pad(month), day: pad(day), hr: pad(hr), min: pad(min), sec: pad(sec), ampm }).add(offsetSeconds, "SEC");
+
+			let applyParserLadyDayShift = false;
+			if (resolvedTag === "O.S." && py <= 1751) {
+				applyParserLadyDayShift = true;
+			}
+			
+			let ay = py;
+			if (applyParserLadyDayShift && (month === 1 || month === 2 || (month === 3 && day < 25))) {
+				ay = py + 1;
+			}
+			
+			let targetMonth = month;
+			let targetDay = day;
+			if (py === 1752 && resolvedTag === "N.S." && month === 1 && day === 1) {
+				targetMonth = 9;
+				targetDay = 14;
+			}
+			
+			let jdnCheck = ymdToJdn(ay, targetMonth, targetDay);
+			let rt = jdnToYmd(jdnCheck);
+			if (rt.y !== ay || rt.m !== targetMonth || rt.d !== targetDay) {
+				throw new Error(`Invalid date.`);
+			}
+
+			return new ProperTime({ year: ay.toString(), month: pad(targetMonth), day: pad(targetDay), hr: pad(hr), min: pad(min), sec: pad(sec), ampm, tag: resolvedTag }).add(offsetSeconds, "SEC");
 		}
 
 		const now = new Date();
@@ -1044,6 +1196,122 @@ const propertime = (function () {
 		if (yearBCE === 2782) currentEgyptianEpoch = EGYPTIAN_EPOCH_2782;
 		else if (yearBCE === 2776) currentEgyptianEpoch = EGYPTIAN_EPOCH_2776;
 		else if (yearBCE === 2773) currentEgyptianEpoch = EGYPTIAN_EPOCH_2773;
+	};
+
+	ptFunc.getclndr = function(input, targetEra = "AUTO", is_he = false) {
+		function getEnOrdinal(n) {
+			let v = n % 100;
+			if (v >= 11 && v <= 13) return n + "ᵗʰ";
+			let last = n % 10;
+			if (last === 1) return n + "ˢᵗ";
+			if (last === 2) return n + "ⁿᵈ";
+			if (last === 3) return n + "ʳᵈ";
+			return n + "ᵗʰ";
+		}
+		
+		let t = ptFunc(input);
+		let jdn = ymdToJdn(parseInt(t.year), parseInt(t.month), parseInt(t.day));
+		
+		let era = targetEra.toUpperCase();
+		if (era === "AUTO") {
+			if (jdn < currentEgyptianEpoch - (SUMERIAN_TOTAL_YEARS * 360)) era = "STONEHENGE";
+			else if (jdn < currentEgyptianEpoch) era = "SUMERIAN";
+			else if (jdn < 1460920) era = "EGYPTIAN";
+			else era = "NATIVE";
+		}
+		
+		function getPeriodIdentifier(pt) {
+			let j = ymdToJdn(parseInt(pt.year), parseInt(pt.month), parseInt(pt.day));
+			if (era === "STONEHENGE") {
+				let sh = jdnToStonehenge(j);
+				return sh ? `${sh.lapse}-${sh.hole}` : pt.getMeta(is_he).displayYear;
+			}
+			if (era === "SUMERIAN") {
+				let su = jdnToSumerian(j);
+				return su ? `${su.kingId}-${su.year}` : pt.getMeta(is_he).displayYear;
+			}
+			if (era === "EGYPTIAN") {
+				let eg = jdnToEgyptian(j);
+				return eg ? `${eg.year}` : pt.getMeta(is_he).displayYear;
+			}
+			let meta = pt.getMeta(is_he);
+			return meta.displayYear + meta.suffix;
+		}
+		
+		let startDay = t;
+		let periodId = getPeriodIdentifier(startDay);
+		
+		let prevDay = startDay.add(-1, "DAYS");
+		while (getPeriodIdentifier(prevDay) === periodId) {
+			startDay = prevDay;
+			prevDay = startDay.add(-1, "DAYS");
+		}
+		
+		let calendar = [];
+		let currentDay = startDay;
+		let currentMonthName = null;
+		let currentMonthObj = null;
+		
+		while (getPeriodIdentifier(currentDay) === periodId) {
+			let mName = "";
+			let isEpag = false;
+			let dayNum = "?";
+			
+			let j = ymdToJdn(parseInt(currentDay.year), parseInt(currentDay.month), parseInt(currentDay.day));
+			
+			if (era === "STONEHENGE") {
+				let sh = jdnToStonehenge(j);
+				mName = "HOL";
+				dayNum = sh.days;
+			} else if (era === "SUMERIAN") {
+				let su = jdnToSumerian(j);
+				mName = `${getEnOrdinal(su.month)} MON`;
+				dayNum = su.day;
+			} else if (era === "EGYPTIAN") {
+				let eg = jdnToEgyptian(j);
+				if (eg.epagomenal) {
+					mName = "HRYW RNPT";
+					isEpag = true;
+					dayNum = eg.day;
+				} else {
+					let season = EGYPTIAN_SEASONS[eg.month - 1] || "SHEMU";
+					let monthInSeason = ((eg.month - 1) % 4) + 1;
+					mName = `${season} ${getEnOrdinal(monthInSeason)} MON`;
+					dayNum = eg.day; 
+				}
+			} else {
+				let mi = parseInt(currentDay.month);
+				if (parseInt(currentDay.year) <= -46) {
+					const ancientRomanNames = {
+						1: "Martius", 2: "Aprilis", 3: "Maius", 4: "Iunius", 5: "Quintilis",
+						6: "Sextilis", 7: "September", 8: "October", 9: "November", 10: "December",
+						11: "Ianuarius", 12: "Februarius", 90: "Dies Hiberni", 91: "Mercedonius",
+						92: "Intercalaris Prior", 93: "Intercalaris Posterior"
+					};
+					mName = ancientRomanNames[mi] || `Month ${mi}`;
+				} else {
+					const modernNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+					mName = modernNames[mi - 1] || `Month ${mi}`;
+				}
+				dayNum = parseInt(currentDay.day);
+			}
+			
+			if (mName !== currentMonthName) {
+				if (currentMonthObj) calendar.push(currentMonthObj);
+				currentMonthName = mName;
+				currentMonthObj = {
+					title: mName,
+					isEpagomenal: isEpag,
+					days: []
+				};
+			}
+			currentMonthObj.days.push(dayNum);
+			
+			currentDay = currentDay.add(1, "DAYS");
+		}
+		if (currentMonthObj) calendar.push(currentMonthObj);
+		
+		return calendar;
 	};
 
 	return ptFunc;
