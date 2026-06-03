@@ -155,6 +155,8 @@
  *   the winter was a nameless void dumped into Month 90.
  * - DON'T ASSUME you must use separate formats for deep time. The .toAltFormats()
  *   handles Stonehenge, Sumerian, Egyptian, Turkic, and Modern extraction.
+ * - DON'T TRY to get Pre‑era by A.C. tag, Înainte Pozitiv tag serves it for a while
+ *   before switching.
  *
  * ----------------------------------------------------------------------------
  * 7. USAGE MANUAL
@@ -2124,10 +2126,27 @@ const propertime = (function () {
 			
 			let suffix = "";
 			if (ay < 0 || py < 0) {
-				suffix = " A.C.";
 				let absY = Math.abs(py);
-				if (absY >= 46 && absY <= 80) suffix += " O.S.";
-				else if (absY >= 20 && absY <= 45) suffix += " N.S.";
+				
+				let isBeforeBirth = false;
+				if (py < -4) {
+					isBeforeBirth = true;
+				} else if (py === -4) {
+					if (m < 12) isBeforeBirth = true;
+					else if (m === 12 && day < 24) isBeforeBirth = true;
+				}
+				
+				if (absY >= 1 && absY <= 25) {
+					if (isBeforeBirth) {
+						suffix = " A.C. I.P.";
+					} else {
+						suffix = " I.P.";
+					}
+				} else {
+					suffix = " A.C.";
+					if (absY >= 46 && absY <= 80) suffix += " O.S.";
+					else if (absY >= 20 && absY <= 45) suffix += " N.S.";
+				}
 			} else if (ay === 1752) {
 				if (m < 9 || (m === 9 && day <= 2)) suffix = " O.S.";
 				else suffix = " N.S.";
@@ -2485,16 +2504,19 @@ const propertime = (function () {
 			let inputTag = input.toUpperCase();
 			let suffix = "";
 			if (inputTag.includes("A.C.")) suffix = "A.C.";
+			else if (inputTag.includes("I.P.")) suffix = "I.P.";
 			else if (inputTag.includes("O.S.")) suffix = "O.S.";
 			else if (inputTag.includes("N.S.")) suffix = "N.S.";
 
 			let s = input
 				.replace(/\s/g, "")
 				.replace(/A\.C\./i, "")
+				.replace(/I\.P\./i, "")
 				.replace(/O\.S\./i, "")
 				.replace(/N\.S\./i, "");
 			let isAC = inputTag.includes("A.C.");
-			let isBC = isAC || s.startsWith("-");
+			let isIP = inputTag.includes("I.P.");
+			let isBC = isAC || isIP || s.startsWith("-");
 			if (s.startsWith("-")) s = s.substring(1);
 			if (s.length < 11) throw new Error("Invalid propertime string");
 
