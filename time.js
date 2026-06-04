@@ -2903,6 +2903,16 @@ const propertime = (function () {
 		};
 	};
 
+	ptFunc.toJDN = function (civilYear, month, day) {
+		return ymdToJdn(parseInt(civilYear), parseInt(month), parseInt(day));
+	};
+	ptFunc.fromJDN = function (jdn) {
+		return jdnToYmd(parseInt(jdn));
+	};
+	ptFunc.jdnDiff = function (cy1, m1, d1, cy2, m2, d2) {
+		return ymdToJdn(cy2, m2, d2) - ymdToJdn(cy1, m1, d1);
+	};
+
 	return ptFunc;
 })();
 
