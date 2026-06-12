@@ -332,7 +332,7 @@ propertime({ STRING: '20260612000101AM' })</code></pre>
 <p>The cases below are the places where building on this library in 2026 changes code compared to the standard clock.</p>
 
 <h3>Will a two-character column hold the seconds?</h3>
-<p>No. The seconds field reaches 240 every night and 241 on leap-second days, so a schema built for <code>00</code> to <code>59</code> truncates real data, and the column needs room for 3 characters.</p>
+<p>No. The seconds field reaches 240 every night, 241 on leap-second days, and 242 on the two days where an official leap second joins the cycle, so a schema built for <code>00</code> to <code>59</code> truncates real data, and the column needs room for 3 characters.</p>
 <pre><code>propertime('20260612000101AM').add(-1, 'SEC').sec</code>
 <samp>240</samp></pre>
 <p>The stored 3-digit stamp parses back without any special handling:</p>
@@ -361,7 +361,10 @@ noon.hr + ' ' + noon.ampm</code>
 <p>On a leap-second day of the 11-day cycle the same minute holds one second more, and June 3 of 2026 is such a day because its Julian Day Number, 2461195, divides by 11:</p>
 <pre><code>propertime('20260603115701PM').add(240, 'SEC').toString()</code>
 <samp>2026 06⁄03 11:57:241 PM</samp></pre>
-<p>So neither 60 nor 240 is a safe ceiling to hardcode for a minute.</p>
+<p>The two lengthenings stack. On a day that falls on the 11-day cycle and carries an official leap second at once, the minute reaches 242 seconds, and the timeline holds exactly two such days, 1 July 1994 and 1 January 2006:</p>
+<pre><code>propertime('20060101115701PM').add(241, 'SEC').toString()</code>
+<samp>2006 01⁄01 11:57:242 PM</samp></pre>
+<p>So neither 60 nor 240 nor even 241 is a safe ceiling to hardcode for a minute.</p>
 
 <h3>Is plain second arithmetic safe across that stretched minute?</h3>
 <p>Yes. The engine absorbs the leap minute internally, so adding 86,400 seconds lands exactly where adding one day lands. Use whichever unit reads better, the results agree.</p>
@@ -423,7 +426,7 @@ msg</code>
 
 <section id="database">
 <h2>Databasing, storing and querying stamps</h2>
-<p>The SQL in this chapter is fixed text, since a browser does not run SQL, and each statement is therefore paired with its JavaScript equivalent. The equivalence holds because a stamp is plain ASCII, and the byte order an engine uses to compare TEXT agrees with the code-unit order JavaScript uses to compare strings.
+<p>The SQL in this chapter is fixed text, since a browser does not run SQL, and each statement is therefore paired with its JavaScript equivalent. The equivalence holds because a stamp is plain ASCII, and the byte order an engine uses to compare TEXT agrees with the code-unit order JavaScript uses to compare strings.</p>
 
 <h3>How do I store it, and would anything break?</h3>
 <p>Store the raw wire stamp in a plain text column and nothing breaks, because to the engine the stamp is an opaque string, stored, compared, and returned byte for byte, while all parsing and arithmetic stay in your code. The library is one file and runs in any JavaScript host, so a backend in another language, for example PHP, can hand stamps to it through a Node process or an embedded JavaScript engine, and the rows themselves never need the library at all. Validation happens in code before the INSERT, as the cases chapter does for the 00 second, because a CHECK constraint cannot carry the notation's rules, the 01 floors and the 240 ceiling that rises to 241 on the cycle days.</p>
@@ -610,6 +613,11 @@ msg</code>
 <section id="paq">
 <h2>PAQ, possible askable questions</h2>
 <dl>
+<dt>Why do minutes and seconds run from 01 to 60, and why does the hour begin at 00?</dt>
+<dd><p>The fields count different things. Minutes and seconds carry ordinal labels, the minute, pars minuta prim , in progress is the first and the second, pars minuta prim , in progress is the first, so the labels run 1 to 60 and the last label equals the count, as romans intended. The everyday statement that a minute holds 60 seconds, and an hour 60 minutes, is read directly off the notation, where the standard 00-to-59 labeling tops out at 59 and the number 60 never appears in a label, except for scientifically added leap‑seconds. Counting from 1 follows the natural numbers, shown as ℕ* or ℤ⁺, as axiomatized by Giuseppe Peano in Arithmetices principia, nova methodo exposita, 1889, whose first axiom places 1 among the numbers, « Axiomata. \  \ 1. 1∈N. ». The hour field counts completed units instead, a cardinal, and during the first hour zero hours are complete, so the day opens at 00:01:01 AM, zero hours done, first minute, first second. The distinction between the ordinal and the cardinal number is the set-theoretic one drawn by Georg Cantor in Beiträge zur Begründung der transfiniten Mengenlehre, 1895, Article I (1895), §§ 1 „ Mächtigkeit oder Kardinalzahl „ & 7 „ Die Ordnungstypen einfach geordneter Mengen „ as well as Article II (1897), § 14 „ Die Ordnungszahlen wohlgeordneter Mengen „, reachable at <a href="https://gdz.sub.uni-goettingen.de/download/pdf/PPN235181684_0046/PPN235181684_0046.pdf"> Göttinger Digitalisierungszentrum</a> starting from p. 500 or <a href="https://archive.org/stream/contributionstof00cant/contributionstof00cant_djvu.txt">archive.org</a>. The largest labels exist and parse:</p>
+<pre><code>propertime('20260612116060AM').toString()</code>
+<samp>2026 06⁄12 11:60:60 AM</samp></pre></dd>
+
 <dt>How far back does it run, and do all the formats run that far?</dt>
 <dd><p>The day count itself has no practical floor, it runs past the Sumerian kings into Stonehenge deep time, where years do not exist and the canonical line is given in laps and holes instead. Each named format has its own era window, and outside it the format table shows a dash. The Old Turkic overlay alone is computed across the whole line.</p>
 <pre><code>propertime('3000000101000101AM A.C.').toString()</code>
