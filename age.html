@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Age Calculator</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #111;
+            color: #eee;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1, h2, h3 {
+            color: #fff;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+        }
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+            font-size: 0.9em;
+        }
+        .log-table th, .log-table td {
+            padding: 8px 12px;
+            border: 1px solid #333;
+            text-align: left;
+        }
+        .log-table th {
+            background-color: #222;
+            color: #aaa;
+        }
+        .panel {
+            margin-bottom: 30px;
+            background: #222;
+            padding: 15px;
+            border-radius: 5px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        input {
+            padding: 5px;
+            width: 100px;
+            background: #111;
+            color: #fff;
+            border: 1px solid #555;
+        }
+        button {
+            padding: 5px 15px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #444;
+        }
+        .result-box {
+            padding: 20px;
+            border: 1px solid #444;
+            background: #1a1a1a;
+            margin-bottom: 20px;
+        }
+        .result-box div {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+        .warning-box {
+            padding: 20px;
+            border: 1px solid #f87171;
+            background: #450a0a;
+            color: #fca5a5;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .highlight { color: #6ee7b7; font-weight: bold; }
+        .secondary { color: #93c5fd; }
+        .accent { color: #fcd34d; }
+        .loading { color: #888; font-style: italic; }
+    </style>
+</head>
+<body>
+
+    <h1>Age Calculator</h1>
+    
+    <div class="panel">
+        <label><strong>Birth Date:</strong></label>
+        <input type="text" id="inYrs" placeholder="YYYY">
+        <label>YRS</label>
+        
+        <input type="text" id="inMon" placeholder="MM">
+        <label>MON</label>
+        
+        <input type="text" id="inDays" placeholder="DD">
+        <label>DAYS</label>
+        
+        <button onclick="calculateAge()">Calculate Age</button>
+    </div>
+    
+    <div id="loading" class="loading" style="display:none;">Calculating time passed... please wait...</div>
+
+    <div id="results" style="display:none;">
+        <h2>Standard Age Results</h2>
+        <div class="result-box">
+            <div><strong>Age:</strong> <span id="resStd" class="highlight"></span></div>
+            <div><strong>Verbose Age:</strong> <span id="resFullTime" class="highlight"></span></div>
+            <div><strong>Age in DAYS:</strong> <span id="resDays"></span></div>
+            <div id="resBreakdown" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #444; font-family: monospace; color: #a8a29e; white-space: pre-line;"></div>
+        </div>
+        
+        <h2>Translation Matrices</h2>
+        <div class="warning-box">
+            Disclaimer: The metrics below are provided exclusively as translation matrices for alternative chronological systems. They deviate from the standard ontological model and should be used solely for comparative purposes.
+        </div>
+        <div class="result-box" style="border-color: #555;">
+            <div style="margin-bottom: 5px;"><strong>Cultic Convention:</strong> <span id="resCult1" class="secondary"></span></div>
+            <div id="warnCult1" style="font-size: 0.8em; color: #fca5a5; margin-bottom: 15px; font-style: italic;">
+            </div>
+            <div style="margin-bottom: 5px;"><strong>Secondary Cultic Convention:</strong> <span id="resCult2" class="accent"></span></div>
+            <div id="warnCult2" style="font-size: 0.8em; color: #fca5a5; margin-bottom: 5px; font-style: italic;">
+            </div>
+        </div>
+    </div>
+
+    <script src="time.js"></script>
+    <script>
+        function calculateAge() {
+            let y = document.getElementById('inYrs').value.trim();
+            let m = document.getElementById('inMon').value.trim();
+            let d = document.getElementById('inDays').value.trim();
+            
+            if (!y || !m || !d) {
+                alert("Please enter YRS, MON, and DAYS.");
+                return;
+            }
+            
+            let yPad = y.padStart(4, '0');
+            let mPad = m.padStart(2, '0');
+            let dPad = d.padStart(2, '0');
+            
+            let birthTimeStr = `${yPad}${mPad}${dPad}000101AM`;
+            let birthPt;
+            let nowPt = propertime();
+            
+            try {
+                birthPt = propertime(birthTimeStr);
+            } catch (e) {
+                alert("Invalid date format for propertime. Error: " + e.message);
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            
+            setTimeout(() => {
+                processCalculation(birthPt, nowPt);
+            }, 50);
+        }
+
+        function processCalculation(birthPt, nowPt) {
+            let by = parseInt(birthPt.year);
+            let bm = parseInt(birthPt.month);
+            let bd = parseInt(birthPt.day);
+            
+            let ny = parseInt(nowPt.year);
+            let nm = parseInt(nowPt.month);
+            let nd = parseInt(nowPt.day);
+            
+            function verboseAge(pt) {
+                let cy = parseInt(pt.year), cm = parseInt(pt.month), cd = parseInt(pt.day);
+                let yD = cy - by, mD = cm - bm, dD = cd - bd;
+                if (dD < 0) { mD -= 1; dD += 30; }
+                if (mD < 0) { yD -= 1; mD += 12; }
+                let fY = yD + 1, fM = mD + 9 + 1, fD = dD + 1;
+                if (fM > 12) { fY += 1; fM -= 12; }
+                return { y: fY, m: fM, d: fD };
+            }
+            
+            function fmtDate(pt) {
+                return pt.toAltFormats()[1];
+            }
+            
+            let bdayPassed = (nm > bm || (nm === bm && nd >= bd));
+            
+            let yDiff = ny - by;
+            let mDiff = nm - bm;
+            let dDiff = nd - bd;
+            if (dDiff < 0) { mDiff -= 1; dDiff += 30; }
+            if (mDiff < 0) { yDiff -= 1; mDiff += 12; }
+            let primaryCulticAge = yDiff;
+            let standardAge = primaryCulticAge + 2;
+            let secondaryCulticAge = ny - by + 1;
+            
+            let nowAge = verboseAge(nowPt);
+            let fullTimeStr = `${nowAge.y} YRS, ${nowAge.m} MON, ${nowAge.d} DAYS`;
+            
+            let diffDays = 0;
+            try {
+                let curr = propertime(`${birthPt.year}${birthPt.month}${birthPt.day}000101AM`);
+                let safety = 0;
+                while ((curr.year !== nowPt.year || curr.month !== nowPt.month || curr.day !== nowPt.day) && safety < 200000) {
+                    curr = curr.add(1, "DAYS");
+                    diffDays++;
+                    safety++;
+                }
+            } catch (e) {
+                console.error("Propertime looping error", e);
+                diffDays = "Error calculating exact days";
+            }
+            
+            document.getElementById('resStd').innerText = `${standardAge} YRS ±5 YRS`;
+            document.getElementById('resFullTime').innerText = fullTimeStr + " ±5 YRS";
+            document.getElementById('resDays').innerText = `${diffDays} DAYS ±1826 DAYS`;
+            
+            let breakdownStr = `> <${fmtDate(birthPt)} → 9 MON\n`;
+            breakdownStr += `> Birth → 1 YRS\n`;
+            breakdownStr += `> ${fmtDate(birthPt)} → 1 YRS 9 MON\n`;
+            
+            let iterYr = propertime(`${birthPt.year}${birthPt.month}${birthPt.day}000101AM`);
+            let ageYr = 3;
+            iterYr = iterYr.add(1, "YRS");
+            
+            let safetyY = 0;
+            let lastBdayYear = bdayPassed ? ny : ny - 1;
+            
+            while (parseInt(iterYr.year) <= lastBdayYear && safetyY < 200) {
+                breakdownStr += `> ${fmtDate(iterYr)} → ${ageYr} YRS\n`;
+                iterYr = iterYr.add(1, "YRS");
+                ageYr++;
+                safetyY++;
+            }
+            
+            let nextBday = iterYr;
+            breakdownStr += `> until ${fmtDate(nextBday)} → ${ageYr - 1} YRS\n`;
+            
+            breakdownStr += `> ${fmtDate(nowPt)} → ${fullTimeStr}\n`;
+            
+            let walker = propertime(`${nowPt.year}${nowPt.month}${nowPt.day}000101AM`);
+            let prevYrs = nowAge.y;
+            walker = walker.add(1, "DAYS");
+            let safetyD = 0;
+            
+            while ((walker.year !== nextBday.year || walker.month !== nextBday.month || walker.day !== nextBday.day) && safetyD < 400) {
+                let a = verboseAge(walker);
+                if (a.y !== prevYrs) {
+                    breakdownStr += `> ${fmtDate(walker)} → ${a.y} YRS, ${a.m} MON, ${a.d} DAYS\n`;
+                    prevYrs = a.y;
+                }
+                walker = walker.add(1, "DAYS");
+                safetyD++;
+            }
+            
+            let dayBefore = nextBday.add(-1, "DAYS");
+            let dbAge = verboseAge(dayBefore);
+            breakdownStr += `> ${fmtDate(dayBefore)} → ${dbAge.y} YRS, ${dbAge.m} MON, ${dbAge.d} DAYS\n`;
+            
+            breakdownStr += `> ${fmtDate(nextBday)} → ${ageYr} YRS`;
+            
+            document.getElementById('resBreakdown').innerText = breakdownStr;
+            
+            document.getElementById('resCult1').innerText = `${primaryCulticAge} YRS`;
+            document.getElementById('resCult2').innerText = `${secondaryCulticAge} YRS`;
+            
+            document.getElementById('warnCult1').innerText = `Don’t confuse their way of writing Pre‑natal birth. Their 18 (legal age) is Our 19‒20, do not confuse.`;
+            document.getElementById('warnCult2').innerText = `Their 20 (legal age) is Our 20‒21, do not confuse.`;
+            
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

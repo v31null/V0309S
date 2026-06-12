@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProperTime Timeline & Calendars</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #111;
+            color: #eee;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1, h2, h3 {
+            color: #fff;
+            border-bottom: 1px solid #444;
+            padding-bottom: 5px;
+        }
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+            font-size: 0.9em;
+        }
+        .log-table th, .log-table td {
+            padding: 8px 12px;
+            border: 1px solid #333;
+            text-align: left;
+        }
+        .log-table th {
+            background-color: #222;
+            color: #aaa;
+        }
+        
+        .calendar-container {
+            margin-bottom: 60px;
+        }
+        .calendar-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .month-card {
+            border: 1px solid #444;
+            background-color: #1a1a1a;
+            width: 250px;
+        }
+        .month-header {
+            background-color: #333;
+            padding: 5px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background-color: #444;
+            border-top: 1px solid #444;
+        }
+        .day-cell {
+            background-color: #1a1a1a;
+            text-align: center;
+            padding: 5px 0;
+            font-size: 0.8em;
+        }
+        .day-cell.empty {
+            background-color: #111;
+        }
+        .day-cell.missing {
+            background-color: #311;
+            color: #555;
+            text-decoration: line-through;
+        }
+        .day-cell.epag {
+            background-color: #2a2a1a;
+            color: #fd0;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>ProperTime Sequence Report</h1>
+    
+    <h2>Timeline Sequence</h2>
+    <table class="log-table" id="timeline-table">
+        <thead>
+            <tr>
+                <th>Event Description</th>
+                <th>Standard Output (Canonical)</th>
+                <th>Forced Roman/Modern</th>
+                <th>Egyptian Output</th>
+                <th>Sumerian Output</th>
+                <th>Kings Regnal Output</th>
+            </tr>
+        </thead>
+        <tbody id="timeline-body">
+        </tbody>
+    </table>
+
+    <h2>Historical Calendar Layouts</h2>
+    <div style="margin-bottom: 30px; background: #222; padding: 15px; border-radius: 5px; display: flex; gap: 10px; align-items: center;">
+        <label for="calInput"><strong>Generate Calendar:</strong></label>
+        <input type="text" id="calInput" placeholder="e.g. 2021A.C." style="padding: 5px; width: 200px; background: #111; color: #fff; border: 1px solid #555;">
+        <input type="checkbox" id="modernLayout" style="margin-left: 10px;"> <label for="modernLayout">Modern Layout</label>
+        <button onclick="generateCustomCalendar()" style="padding: 5px 15px; background: #333; color: #fff; border: 1px solid #555; cursor: pointer; margin-left: 10px;">Generate</button>
+    </div>
+    <div id="calendars-wrapper"></div>
+
+    <script src="time.js"></script>
+    <script>
+        const timelineEvents = [
+            { desc: "Pre-historic 100,000 A.C.", time: "1000000101000101AMA.C." },
+            { desc: "Sumerian 3200 A.C.", time: "32000101000101AMA.C." },
+            { desc: "Egyptian Epoch Start", time: "27761004116060AMA.C." },
+            { desc: "Roman Transition (713 A.C.)", time: "7130101000101AMA.C." },
+            { desc: "Year of Confusion (46 A.C.)", time: "460101000101AMA.C." },
+            { desc: "Lady Day Shift N.S. (1154)", time: "11540101000101AMN.S." },
+            { desc: "Lady Day Shift O.S. (1155)", time: "11550325000101AMO.S." },
+            { desc: "Gregorian Skip (1752 O.S. End)", time: "175209021157240PMO.S." },
+            { desc: "Gregorian Skip (1752 N.S. Start)", time: "17520914000101AMN.S." },
+
+            // --- Regnal coverage gap: Egyptian king list ends -> 174-day interregnum -> Romulus ---
+            { desc: "Last Egyptian King (PIYE, 753 A.C.)", time: "7530708000101AMA.C." },
+            { desc: "Regnal Gap begins — no king listed (753 A.C.)", time: "7530709000101AMA.C." },
+            { desc: "Regnal Gap — nameless winter, Month 90 (753 A.C.)", time: "7539061000101AMA.C." },
+            { desc: "First King: ROMVLVS, gap closes (752 A.C.)", time: "7520101000101AMA.C." },
+
+            // --- Daily leap second on the 11-day cycle: minute 57 stretches to 241 ---
+            { desc: "Leap second reachable — 11:57:241 PM (2024-01-05)", time: "202401051157241PM" }
+        ];
+
+        for (let i = 0; i < 15; i++) {
+            let isBC = Math.random() > 0.5;
+            let year;
+            let suffix = "";
+            let desc = "";
+            if (isBC) {
+                year = Math.floor(Math.random() * 753) + 1;
+                suffix = "A.C.";
+                desc = `Random Test (${year} A.C.)`;
+            } else {
+                year = Math.floor(Math.random() * 2000) + 1;
+                desc = `Random Test ( ${year} )`;
+            }
+            
+            let month = Math.floor(Math.random() * 12) + 1;
+            let day = Math.floor(Math.random() * 28) + 1;
+            
+            let yrStr = year.toString();
+            let mStr = month.toString().padStart(2, '0');
+            let dStr = day.toString().padStart(2, '0');
+            let timeStr = `${yrStr}${mStr}${dStr}000101AM${suffix}`;
+            
+            timelineEvents.push({ desc: desc, time: timeStr });
+        }
+        
+
+        const tBody = document.getElementById('timeline-body');
+        
+        timelineEvents.forEach(ev => {
+            let t = propertime(ev.time);
+            let tr = document.createElement('tr');
+            
+            let stdCanon = t.toString(false, false);
+            let forcedRoman = t.toString(false, true);
+            let egOut = t.toAltFormats()[12];
+            let suOut = t.toAltFormats()[14];
+            let erOut = t.toAltFormats()[18];
+            
+            tr.innerHTML = `
+                <td>${ev.desc}</td>
+                <td style="color: #6ee7b7">${stdCanon}</td>
+                <td style="color: #93c5fd">${forcedRoman}</td>
+                <td style="color: #fcd34d">${egOut}</td>
+                <td style="color: #c084fc">${suOut}</td>
+                <td style="color: #f87171">${erOut}</td>
+            `;
+            tBody.appendChild(tr);
+        });
+        
+        let now = propertime();
+        let trNow = document.createElement('tr');
+        trNow.innerHTML = `
+            <td>Current Time (To-day)</td>
+            <td style="color: #6ee7b7">${now.toString()}</td>
+            <td style="color: #93c5fd">${now.toString()}</td>
+            <td style="color: #fcd34d">—</td>
+            <td style="color: #c084fc">—</td>
+            <td style="color: #f87171">${now.toAltFormats()[18]}</td>
+        `;
+        tBody.appendChild(trNow);
+
+        const calendarsWrapper = document.getElementById('calendars-wrapper');
+
+        function createMonthUI(title) {
+            let card = document.createElement('div');
+            card.className = 'month-card';
+            let head = document.createElement('div');
+            head.className = 'month-header';
+            head.innerText = title;
+            card.appendChild(head);
+            let grid = document.createElement('div');
+            grid.className = 'days-grid';
+            card.appendChild(grid);
+            return { card, grid };
+        }
+
+        function appendDayCell(grid, content, className = '') {
+            let cell = document.createElement('div');
+            cell.className = 'day-cell ' + className;
+            cell.innerHTML = content;
+            grid.appendChild(cell);
+        }
+
+                function renderModernCalendar(title, inputObj) {
+            try {
+                let container = document.createElement('div');
+                container.className = 'calendar-container';
+                container.innerHTML = `<h3>${title}</h3><div class="calendar-grid modern"></div>`;
+                calendarsWrapper.appendChild(container);
+                let gridWrapper = container.querySelector('.calendar-grid');
+
+                let calData = propertime.getclndrmodern(inputObj);
+                let monthIdx = 1;
+                
+                calData.calendar.forEach(month => {
+                    let card = document.createElement('div');
+                    card.className = 'month-card modern-layout';
+                    let table = document.createElement('table');
+                    table.style.width = '100%';
+                    table.style.borderCollapse = 'collapse';
+                    table.style.textAlign = 'center';
+                    
+                    let wknds = calData.wknds[monthIdx] || [];
+                    
+                    // Row 1: Title
+                    let tr1 = document.createElement('tr');
+                    let thTitle = document.createElement('th');
+                    thTitle.colSpan = 7;
+                    thTitle.innerText = month.title;
+                    thTitle.style.background = '#444';
+                    thTitle.style.padding = '5px';
+                    thTitle.style.border = '1px solid #555';
+                    tr1.appendChild(thTitle);
+                    table.appendChild(tr1);
+                    
+                    // Row 2: Weekdays
+                    let tr2 = document.createElement('tr');
+                    month.weekdays.forEach(wd => {
+                        let th = document.createElement('th');
+                        th.innerText = wd;
+                        th.style.background = '#333';
+                        th.style.border = '1px solid #555';
+                        if (wd === "Sat" || wd === "Sun") {
+                            th.style.background = 'red';
+                            th.style.color = 'white';
+                        }
+                        tr2.appendChild(th);
+                    });
+                    table.appendChild(tr2);
+                    
+                    // Rows 3-7: Days
+                    for(let r = 0; r < 5; r++) {
+                        let tr = document.createElement('tr');
+                        if (r < month.rows.length) {
+                            month.rows[r].forEach(d => {
+                                let td = document.createElement('td');
+                                td.innerText = d;
+                                td.style.border = '1px solid #555';
+                                td.style.padding = '5px';
+                                if (wknds.includes(d)) {
+                                    td.style.background = 'red';
+                                    td.style.color = 'white';
+                                }
+                                tr.appendChild(td);
+                            });
+                            if (r === month.rows.length - 1 && month.emptyColspan > 0) {
+                                let td = document.createElement('td');
+                                td.colSpan = month.emptyColspan;
+                                td.className = 'empty';
+                                td.style.background = '#000';
+                                td.style.border = '1px solid #555';
+                                tr.appendChild(td);
+                            }
+                        } else {
+                            let td = document.createElement('td');
+                            td.colSpan = 7;
+                            td.className = 'empty';
+                            td.style.background = '#000';
+                            td.style.border = '1px solid #555';
+                            tr.appendChild(td);
+                        }
+                        table.appendChild(tr);
+                    }
+                    
+                    card.appendChild(table);
+                    gridWrapper.appendChild(card);
+                    monthIdx++;
+                });
+            } catch (err) {
+                console.error(err);
+                let errDiv = document.createElement('div');
+                errDiv.style.color = 'red';
+                errDiv.innerText = `Error generating ${title}: ${err.message}`;
+                calendarsWrapper.appendChild(errDiv);
+            }
+        }
+
+        function renderCalendar(title, inputObj, targetEra = "AUTO") {
+            try {
+                let container = document.createElement('div');
+                container.className = 'calendar-container';
+                container.innerHTML = `<h3>${title}</h3><div class="calendar-grid"></div>`;
+                calendarsWrapper.appendChild(container);
+                let gridWrapper = container.querySelector('.calendar-grid');
+
+                let cal = propertime.getclndr(inputObj, targetEra);
+                let dayCount = 0;
+                
+                cal.forEach(month => {
+                    let ui = createMonthUI(month.title);
+                    gridWrapper.appendChild(ui.card);
+                    month.days.forEach(day => {
+                        appendDayCell(ui.grid, day, month.isEpagomenal ? 'epag' : '');
+                        dayCount++;
+                    });
+                });
+
+                let info = document.createElement('div');
+                info.style.width = '100%';
+                info.style.marginTop = '10px';
+                info.style.color = '#888';
+                info.innerText = `Total Days in Year: ${dayCount}`;
+                gridWrapper.appendChild(info);
+            } catch (err) {
+                console.error(err);
+                let errDiv = document.createElement('div');
+                errDiv.style.color = 'red';
+                errDiv.innerText = `Error generating ${title}: ${err.message}`;
+                calendarsWrapper.appendChild(errDiv);
+            }
+        }
+        
+        function generateCustomCalendar() {
+            let inputStr = document.getElementById('calInput').value.trim();
+            if (!inputStr) return;
+            calendarsWrapper.innerHTML = "";
+            let isModern = document.getElementById('modernLayout').checked;
+            if (isModern) {
+                renderModernCalendar(`Modern Calendar (${inputStr})`, { YRS: inputStr });
+            } else {
+                renderCalendar(`Custom Calendar (${inputStr})`, { YRS: inputStr });
+            }
+        }
+
+        let nowObj = propertime();
+        renderCalendar("Sumerian Year (Canonical 360-day)", { STRING: "LUGALBANDA’s 1ˢᵗ YRS’s 1ˢᵗ MON’s 1ˢᵗ DAYS 00:01:01 AM" });
+        renderCalendar("Egyptian Year (Canonical 365-day)", { STRING: "1000ᵗʰ YRS’s AKHET’s 1ˢᵗ MON’s 1ˢᵗ DEC’s 1ˢᵗ DAYS 00:01:01 AM" });
+        renderCalendar("Roman Year of Confusion (46 A.C. - 445 days)", { YRS: "46A.C." });
+        renderCalendar("Lady Day Transition Year (1154 N.S. / O.S. overlap - 448 days)", { YRS: "1154N.S." });
+        renderCalendar("Gregorian Skip Year (1752 O.S. to N.S.)", { YRS: "1752O.S." });
+        renderCalendar(`Current Year (${nowObj.year})`, { YRS: nowObj.year });
+
+    </script>
+</body>
+</html>
