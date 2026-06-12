@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>propertime User Manual</title>
+<style>
+#tz-form {
+	display: inline-flex;
+	align-items: flex-end;
+	gap: 1.2em;
+	padding: 1em 1.4em;
+	border: 2px solid #222;
+	border-radius: 0.8em;
+	background: #f4f4f4;
+}
+#tz-form label {
+	display: inline-flex;
+	flex-direction: column;
+	gap: 0.35em;
+	font-size: 0.85em;
+	text-align: center;
+}
+#tz-form select {
+	font-family: ui-monospace, monospace;
+	font-size: 1.4em;
+	padding: 0.25em 0.5em;
+	border: 1px solid #888;
+	border-radius: 0.4em;
+	background: #fff;
+}
+#tz-form input {
+	width: 1.4em;
+	height: 1.4em;
+}
+#tz-clock {
+	font-family: ui-monospace, monospace;
+	font-size: 1.25em;
+}
+</style>
+</head>
+<body id="top">
+
+<h1>propertime User Manual</h1>
+
+<p>This is the user manual for <code>propertime</code>, the time library in <code>time.js</code>. It is one function plus a few helpers attached to it. You give it an instant and you get a time value that prints in the system's own notation and in a limited set of other manners. The manual runs the library on itself, in that the script at the foot of the page executes every example block on the page and rewrites the printed output from that run, so the printed outputs are recomputed at every load.</p>
+
+<p>The facts that matter most are these:</p>
+
+<ul>
+<li>The calendar is the English civil calendar and the regnal output follows the English crown, not any other line. The change of style is the English one of September 1752, where eleven days are wiped, not the Catholic one of 1582. From 1155 to 1751 the year begins on Lady Day, March 25, and the year 1154 is 448 days long. The regnal format names the reigning monarch, CHARLES III for 2026.</li>
+<li>Minutes and seconds run from 01 to 60, never 00. Hours begin at 00, and there is no 12 AM or 12 PM. The day begins at 00:01:01 AM. Standard 11:59:59 AM is written 11:60:60 AM, and the second after it, standard noon, is 00:01:01 PM.</li>
+<li>A day is 86,164 seconds, not 86,400. The difference is absorbed at the end of the day, where the last minute runs to 240 seconds, to 241 on the leap-second days of the built-in 11-day cycle, which are the days whose Julian Day Number divides by 11 without remainder, and longer again when an official leap second is added. The second after the last one is 00:01:01 AM of the next day.</li>
+<li>The baseline is Japan Standard Time, kept at the Akashi Municipal Planetarium. GMT is treated as 9 hours behind this baseline, and there is no automatic daylight saving.</li>
+<li>Years before year 1 are tagged <code>A.C.</code>, Ante Christum, never A.D. or B.C., and there is no year 0. A.C. means before the birth, and the birth is dated December 24 of the year 4 before year 1, so the two boundaries do not coincide, and the <code>I.P.</code> tag exists for the span between them. The years 1 to 25 before year 1 carry I.P., which counts back from year 1, and A.C. appears beside it only when the date truly precedes the birth. The year 2 before year 1 is <code>2 I.P.</code> and not an A.C. year at all, while the year 10 is <code>10 A.C. I.P.</code></li>
+</ul>
+
+<p>Rules for dates older than the Roman calendar reform are collected in a <a href="#ancient">footnote at the end</a>.</p>
+
+<nav id="index">
+<h2>Index</h2>
+<ol>
+<li><a href="#loading">Loading the library</a></li>
+<li><a href="#making">Creating a time value</a></li>
+<li><a href="#inputs">Input formats</a></li>
+<li><a href="#offsets">Offsets and daylight saving</a></li>
+<li><a href="#value">The returned value</a></li>
+<li><a href="#methods">Methods</a></li>
+<li><a href="#helpers">Helper functions</a></li>
+<li><a href="#altformats">The twenty alternate formats</a></li>
+<li><a href="#examples">Examples</a></li>
+<li><a href="#cases">Building on propertime, cases and solutions</a></li>
+<li><a href="#database">Databasing, storing and querying stamps</a></li>
+<li><a href="#try">Try it in the browser</a></li>
+<li><a href="#tests">Live tests</a></li>
+<li><a href="#advice">« Can I »s</a></li>
+<li><a href="#paq">PAQ, possible askable questions</a></li>
+<li><a href="#errors">Errors</a></li>
+<li><a href="#ancient">Footnote, ancient dates</a></li>
+</ol>
+</nav>
+
+<section id="loading">
+<h2>Loading the library</h2>
+<p>Under Node:</p>
+<pre><code>const propertime = require('./time.js')</code></pre>
+<p>In a browser the file sets a global named <code>propertime</code>:</p>
+<pre><code>&lt;script src="time.js"&gt;&lt;/script&gt;</code></pre>
+<p>The file is also served by the jsDelivr CDN from the project repository:</p>
+<pre><code>&lt;script src="https://cdn.jsdelivr.net/gh/v31null/V0309S/time.js"&gt;&lt;/script&gt;</code></pre>
+<p>The file also registers itself with AMD loaders through <code>define</code>. In every case you get the same function, and the helpers are properties on it.</p>
+</section>
+
+<section id="making">
+<h2>Creating a time value</h2>
+<pre><code>propertime(input, off_set_japan, is_day_time_saving, verbose)</code></pre>
+<p>All four parameters are optional.</p>
+<dl>
+<dt><code>input</code></dt><dd>The instant, as a string or an object. See the next section. If omitted, the current time is taken from Japan Standard Time.</dd>
+<dt><code>off_set_japan</code></dt><dd>A string that shifts the result by hours relative to the JST baseline. See offsets below.</dd>
+<dt><code>is_day_time_saving</code></dt><dd>A boolean. If <code>true</code>, exactly one hour is added. The library never applies daylight saving on its own.</dd>
+<dt><code>verbose</code></dt><dd>A boolean. If <code>true</code>, the formal deep-time formats spell out every field, including fields at value 1, which are otherwise dropped.</dd>
+</dl>
+</section>
+
+<section id="inputs">
+<h2>Input formats</h2>
+<p>A timestamp string has this layout:</p>
+<pre><code>[Year][Month][Day][Hour][Min][Sec][AM or PM][Optional Suffix]</code></pre>
+<ul>
+<li>Month, day, hour, and minute are exactly 2 digits each.</li>
+<li>Second is 2 digits, or 3 digits during the daily leap minute.</li>
+<li>Year is any length. The fixed-width fields are read off the right end and whatever remains on the left is the year, which is why they must be exactly 2 digits.</li>
+<li><code>AM</code> or <code>PM</code> is required. There is no 24-hour input.</li>
+<li>The suffix may be <code>A.C.</code>, <code>I.P.</code>, <code>O.S.</code>, or <code>N.S.</code>. <code>A.C.</code> takes precedence if combined with the others. On overlap years such as 1154/1155 and 1752, <code>O.S.</code> or <code>N.S.</code> is mandatory.</li>
+</ul>
+<pre><code>propertime('20260612000101AM')
+propertime('450101000101AM A.C.')</code></pre>
+<p>The input may also be an object. With a <code>STRING</code> field it is unwrapped and parsed as above. With unit fields a timestamp is built from them. The fields for a normal date are <code>YRS</code>, <code>MON</code>, <code>DAYS</code>, <code>HRS</code>, <code>MIN</code>, <code>SEC</code>, and the <code>HRS</code> value carries the meridiem, for example <code>'00AM'</code>. Deep-time dates may instead use <code>LAP</code> and <code>HOL</code> for Stonehenge, the lap and the hole of the unit table under <code>add</code>, or <code>SEA</code> and <code>DEC</code> for Egyptian, where <code>SEA</code> picks the season, 1 for AKHET, 5 for PERET, 9 for SHEMU, and 4 for the five epagomenal days, <code>MON</code> counts the month inside the season, and <code>DEC</code> is the ten-day decan inside the month. The parser also reads back the canonical deep-time display lines themselves, as the <a href="#advice">round-trip answer</a> shows. Both calls below equal the first string form above:</p>
+<pre><code>propertime({ YRS: 2026, MON: 6, DAYS: 12, HRS: '00AM', MIN: 1, SEC: 1 })
+propertime({ STRING: '20260612000101AM' })</code></pre>
+</section>
+
+<section id="offsets">
+<h2>Offsets and daylight saving</h2>
+<p>The <code>off_set_japan</code> string is hours relative to JST. A leading <code>M</code> means minus. A tail of the form <code>F&lt;numerator&gt;TO&lt;denominator&gt;</code> adds a fraction of an hour.</p>
+<table>
+<thead><tr><th>String</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>'3'</code></td><td>+3 hours</td></tr>
+<tr><td><code>'M3'</code></td><td>-3 hours</td></tr>
+<tr><td><code>'3F1TO2'</code></td><td>+3.5 hours</td></tr>
+<tr><td><code>'M1F1TO4'</code></td><td>-1.25 hours</td></tr>
+</tbody>
+</table>
+<p>Passing <code>true</code> for <code>is_day_time_saving</code> adds one hour on top of the offset. The library does no other daylight saving, and any further rule you script yourself with the offset string or with <code>add</code>.</p>
+</section>
+
+<section id="value">
+<h2>The returned value</h2>
+<p>The function returns a time value whose fields you can read directly:</p>
+<dl>
+<dt><code>year</code></dt><dd>Astronomical year as a string, any length, negative for the years before year 1, since there is no year 0.</dd>
+<dt><code>month</code></dt><dd>Month number, 2-digit string.</dd>
+<dt><code>day</code></dt><dd>Day of month, 2-digit string.</dd>
+<dt><code>hr</code></dt><dd>Hour, 2-digit string, <code>00</code> to <code>11</code>.</dd>
+<dt><code>min</code></dt><dd>Minute, 2-digit string, <code>01</code> to <code>60</code>.</dd>
+<dt><code>sec</code></dt><dd>Second as a string, 2 digits, or 3 during the leap minute.</dd>
+<dt><code>ampm</code></dt><dd><code>AM</code> or <code>PM</code>.</dd>
+<dt><code>tag</code></dt><dd>The resolved era marker: <code>O.S.</code>, <code>N.S.</code>, <code>A.C.</code>, <code>I.P.</code>, or empty. The parser fills it in when the year alone settles it.</dd>
+<dt><code>verbose</code></dt><dd>The boolean passed as the fourth parameter.</dd>
+</dl>
+</section>
+
+<section id="methods">
+<h2>Methods</h2>
+
+<h3><code>add(n, unit)</code></h3>
+<p>Returns a new time value moved by <code>n</code> units. The original value is not changed. Subtraction is the same method with a minus sign on <code>n</code>, there is no separate subtract. The move respects the leap minute and the calendar gaps, so one second before <code>00:01:01 AM</code> is the previous day at <code>11:57:240 PM</code>, or at <code>11:57:241 PM</code> when that day carries a leap second.</p>
+<table>
+<thead><tr><th>Unit</th><th>Step</th></tr></thead>
+<tbody>
+<tr><td><code>SEC</code></td><td>1 second</td></tr>
+<tr><td><code>MIN</code></td><td>1 minute</td></tr>
+<tr><td><code>HRS</code></td><td>1 hour</td></tr>
+<tr><td><code>DAYS</code></td><td>1 day</td></tr>
+<tr><td><code>WEEK</code></td><td>7 days</td></tr>
+<tr><td><code>MON</code></td><td>1 calendar month</td></tr>
+<tr><td><code>YRS</code></td><td>1 year</td></tr>
+<tr><td><code>DEC</code></td><td>10 years, or 10 days when the date is in the Egyptian era</td></tr>
+<tr><td><code>CEN</code></td><td>100 years</td></tr>
+<tr><td><code>MIL</code></td><td>1000 years</td></tr>
+<tr><td><code>YWL</code></td><td>1 year, Turkic name</td></tr>
+<tr><td><code>AY</code></td><td>1 calendar month, Turkic name</td></tr>
+<tr><td><code>KUEN</code></td><td>1 day, Turkic name</td></tr>
+<tr><td><code>LAP</code></td><td>20,454 days, one Stonehenge lap</td></tr>
+<tr><td><code>HOL</code></td><td>365.25 days, one Stonehenge hole</td></tr>
+<tr><td><code>SEA</code></td><td>Moves nothing in <code>add</code>, in the modern and the Egyptian era alike, because SEA is the season field of the Egyptian object input described under input formats, and it is not a step unit.</td></tr>
+</tbody>
+</table>
+
+<h3><code>getMeta(is_he)</code></h3>
+<p>Returns <code>{ displayYear, suffix }</code>, the year as it should be displayed and the era suffix with its leading space. With <code>is_he</code> set to <code>true</code> the year is given in the Holocene count, which adds 10,000 to the astronomical year, and the canonical suffixes are kept.</p>
+
+<h3><code>toString(is_he, force_roman)</code></h3>
+<p>Returns the date as one line. For dates after the Roman era boundary the line is the civil form: year, month and day, time, meridiem, suffix. For older dates it returns the canonical deep-time line of the era instead, Egyptian, Sumerian, or Stonehenge. Pass <code>true</code> for <code>force_roman</code> to get the civil form even for an ancient date. <code>is_he</code> works as in <code>getMeta</code>.</p>
+
+<h3><code>toAltFormats(is_he, force_roman)</code></h3>
+<p>Returns an array of exactly 20 strings, each a different rendering of the same instant, indexed as listed in <a href="#altformats">the format table</a>. The flags mean the same as on <code>toString</code>.</p>
+</section>
+
+<section id="helpers">
+<h2>Helper functions</h2>
+
+<h3><code>propertime.setEgyptianEpoch(yearBCE)</code></h3>
+<p>Sets the anchor of the Egyptian reckoning. Accepted values are <code>2782</code>, <code>2776</code>, and <code>2773</code>. The parameter keeps the conventional BCE numbering rather than this system's own, so that the value can be checked directly against the sources that cite the epoch. Setting it moves the boundary between the Egyptian and Sumerian eras, and the conversions stay consistent because they take their phase from the same anchor. Returns nothing.</p>
+
+<h3><code>propertime.getclndr(input, targetEra, is_he)</code></h3>
+<p>Builds a calendar for the period containing the given date. Returns an array of month objects, each with <code>title</code>, <code>isEpagomenal</code>, and <code>days</code>, where <code>days</code> is the list of day numbers. <code>targetEra</code> is <code>AUTO</code>, <code>STONEHENGE</code>, <code>SUMERIAN</code>, <code>EGYPTIAN</code>, or <code>NATIVE</code>, where <code>AUTO</code> picks the era the date falls in and <code>NATIVE</code> forces the frame of the engine's own civil calendar, which is also what <code>AUTO</code> arrives at for any modern date.</p>
+
+<h3><code>propertime.getclndrmodern(input)</code></h3>
+<p>Builds a Gregorian wall calendar for the year of the given date. Only years 1800 and later are accepted, earlier years throw. Returns <code>{ calendar, wknds }</code>. <code>calendar</code> is 12 month objects, each with <code>title</code>, <code>weekdays</code>, <code>rows</code> of day numbers split into weeks, and <code>emptyColspan</code> for the blank cells of the last row. <code>wknds</code> maps month number to the day numbers falling on weekends. The interactive chapter at the end of this manual renders one of these months as a real table.</p>
+
+<h3><code>propertime.toJDN(civilYear, month, day)</code></h3>
+<p>Converts a civil date to its Julian Day Number, the day count the library uses internally as common ground between the calendars.</p>
+
+<h3><code>propertime.fromJDN(jdn)</code></h3>
+<p>Performs the reverse conversion and returns <code>{ y, m, d }</code>.</p>
+
+<h3><code>propertime.jdnDiff(cy1, m1, d1, cy2, m2, d2)</code></h3>
+<p>Returns the number of days from the first civil date to the second.</p>
+</section>
+
+<section id="altformats">
+<h2>The twenty alternate formats</h2>
+<p>Indices 0 through 9 are the everyday written forms. Indices 10 and 11 are the Old Turkic forms, which are computed for every era. Indices 12 through 19 are era-bound, and each shows a single dash when the date does not fall in its era. The third column holds the output for <code>propertime('20260612000101AM')</code>, and the column is recomputed from the same call when the page is loaded. For 2026 the Egyptian, Sumerian, and Stonehenge slots are dashes, while the English regnal slots are filled. Indices 3 to 5 differ from index 2 only when the month or the day is a single digit, June 12 has two digits of each, so they look alike here.</p>
+<table id="alt-table">
+<thead><tr><th>Index</th><th>Format</th><th>For 2026-06-12</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>Year/month/day</td><td><code>2026/06/12</code></td></tr>
+<tr><td>1</td><td>Year, then month/day</td><td><code>2026 06/12</code></td></tr>
+<tr><td>2</td><td>Digits run together</td><td><code>20260612</code></td></tr>
+<tr><td>3</td><td>No padding</td><td><code>2026612</code></td></tr>
+<tr><td>4</td><td>Padded month, unpadded day</td><td><code>20260612</code></td></tr>
+<tr><td>5</td><td>Unpadded month, padded day</td><td><code>2026612</code></td></tr>
+<tr><td>6</td><td>Full month name, padded day</td><td><code>2026 june 12</code></td></tr>
+<tr><td>7</td><td>Full month name, unpadded day</td><td><code>2026 june 12</code></td></tr>
+<tr><td>8</td><td>Short month name, unpadded day</td><td><code>2026 jun. 12</code></td></tr>
+<tr><td>9</td><td>Short month name, padded day</td><td><code>2026 jun. 12</code></td></tr>
+<tr><td>10</td><td>Old Turkic, Runic spelling</td><td><code>169UNČ YUNT YWL , TOERTWNČ AY , 12NČ KUEN 00:01:01 AM</code></td></tr>
+<tr><td>11</td><td>Old Turkic, English</td><td><code>169ᵗʰ HORSE YRS , 4ᵗʰ MON , 12ᵗʰ DAY 00:01:01 AM</code></td></tr>
+<tr><td>12</td><td>Egyptian formal</td><td><code>—</code></td></tr>
+<tr><td>13</td><td>Egyptian short</td><td><code>—</code></td></tr>
+<tr><td>14</td><td>Sumerian formal</td><td><code>—</code></td></tr>
+<tr><td>15</td><td>Sumerian short</td><td><code>—</code></td></tr>
+<tr><td>16</td><td>Stonehenge formal</td><td><code>—</code></td></tr>
+<tr><td>17</td><td>Stonehenge short</td><td><code>—</code></td></tr>
+<tr><td>18</td><td>English regnal formal</td><td><code>CHARLES III’s 4ᵗʰ YRS’s 10ᵗʰ MON’s 5ᵗʰ DAYS 00:01:01 AM</code></td></tr>
+<tr><td>19</td><td>English regnal short</td><td><code>CHARLES III‑4⁄10⁄5</code></td></tr>
+</tbody>
+</table>
+<p>You pick one rendering by index:</p>
+<pre><code>const turkic = propertime('20260612000101AM').toAltFormats()[11]</code></pre>
+<p>With <code>verbose</code> set, the formal deep-time renderings name every field including those at value 1. The flag does not affect indices 0 through 9.</p>
+</section>
+
+<section id="examples">
+<h2>Examples</h2>
+<p>Each block shows a call and beneath it its output. On a loaded page the script at the bottom runs every such block on the page and rewrites the output from that run, so the printed value and the computed value are the same thing. Without the script the printed values remain, each of them the library's own output for the call above it. Blocks that read the current clock change with every load.</p>
+
+<h3>Getting the current time</h3>
+<pre><code>propertime().toString()</code>
+<samp>2026 06⁄12 03:01:53 PM</samp></pre>
+
+<h3>Getting the date as one run of digits</h3>
+<pre><code>propertime('20260612000101AM').toAltFormats()[2]</code>
+<samp>20260612</samp></pre>
+
+<h3>Addition, and subtraction with a minus sign</h3>
+<pre><code>propertime('20260612000101AM').add(45, 'DAYS').toString()</code>
+<samp>2026 07⁄27 00:01:01 AM</samp></pre>
+
+<pre><code>propertime('20260612000101AM').add(-2, 'MON').toString()</code>
+<samp>2026 04⁄12 00:01:01 AM</samp></pre>
+
+<pre><code>propertime('20260612000101AM').add(-1, 'SEC').toString()</code>
+<samp>2026 06⁄11 11:57:240 PM</samp></pre>
+
+<p>The same subtraction landing on a leap-second day of the 11-day cycle ends at 241 instead:</p>
+<pre><code>propertime('20260604000101AM').add(-1, 'SEC').toString()</code>
+<samp>2026 06⁄03 11:57:241 PM</samp></pre>
+
+<h3>The noon alignment</h3>
+<pre><code>propertime('20260612116060AM').add(1, 'SEC').toString()</code>
+<samp>2026 06⁄12 00:01:01 PM</samp></pre>
+
+<h3>Offsets and daylight saving</h3>
+<pre><code>propertime('20260612100101AM', 'M3').toString()</code>
+<samp>2026 06⁄12 07:01:01 AM</samp></pre>
+
+<pre><code>propertime('20260612100101AM', 'M3', true).toString()</code>
+<samp>2026 06⁄12 08:01:01 AM</samp></pre>
+
+<h3>Getting a calendar</h3>
+<pre><code>propertime.getclndr('20260612000101AM', 'NATIVE').length</code>
+<samp>12</samp></pre>
+
+<h3>Days in a month</h3>
+<pre><code>propertime.getclndr('20260612000101AM', 'NATIVE')[5].title</code>
+<samp>June</samp></pre>
+
+<pre><code>propertime.getclndr('20260612000101AM', 'NATIVE')[5].days.length</code>
+<samp>30</samp></pre>
+
+<h3>Weekend days of a month</h3>
+<pre><code>propertime.getclndrmodern('20260612000101AM').wknds[6].join(',')</code>
+<samp>6,7,13,14,20,21,27,28</samp></pre>
+
+<h3>Day numbers and day arithmetic</h3>
+<pre><code>propertime.toJDN(2026, 6, 12)</code>
+<samp>2461204</samp></pre>
+
+<pre><code>JSON.stringify(propertime.fromJDN(2461204))</code>
+<samp>{"y":2026,"m":6,"d":12}</samp></pre>
+
+<pre><code>propertime.jdnDiff(2026, 1, 1, 2027, 1, 1)</code>
+<samp>365</samp></pre>
+
+<h3>Ancient dates and the civil override</h3>
+<pre><code>propertime('20000101000101AM A.C.').toString()</code>
+<samp>776ᵗʰ YRS’s SHEMU’s 2ⁿᵈ MON’s 2ⁿᵈ DEC’s 3ʳᵈ DAYS 00:01:01 AM</samp></pre>
+
+<pre><code>propertime('20000101000101AM A.C.').toString(false, true)</code>
+<samp>2000 01⁄01 00:01:01 AM A.C.</samp></pre>
+
+<pre><code>JSON.stringify(propertime('20000101000101AM A.C.').getMeta())</code>
+<samp>{"displayYear":"2000","suffix":" A.C."}</samp></pre>
+
+<pre><code>JSON.stringify(propertime('20000101000101AM A.C.').getMeta(true))</code>
+<samp>{"displayYear":"8&nbsp;000","suffix":" A.C."}</samp></pre>
+
+<h3>The verbose flag</h3>
+<p>The formal deep-time line drops fields at value 1, and the fourth parameter restores them. Both calls below name the same instant, the first day of an Egyptian year:</p>
+<pre><code>propertime({ YRS: 776, SEA: 1, MON: 1, DEC: 1, DAYS: 1 }).toString()</code>
+<samp>776ᵗʰ YRS’s AKHET 00:01:01 AM</samp></pre>
+<pre><code>propertime({ YRS: 776, SEA: 1, MON: 1, DEC: 1, DAYS: 1 }, null, false, true).toString()</code>
+<samp>776ᵗʰ YRS’s AKHET’s 1ˢᵗ MON’s 1ˢᵗ DEC’s 1ˢᵗ DAYS 00:01:01 AM</samp></pre>
+</section>
+
+<section id="cases">
+<h2>Building on propertime, cases and solutions</h2>
+<p>The cases below are the places where building on this library in 2026 changes code compared to the standard clock.</p>
+
+<h3>Will a two-character column hold the seconds?</h3>
+<p>No. The seconds field reaches 240 every night and 241 on leap-second days, so a schema built for <code>00</code> to <code>59</code> truncates real data, and the column needs room for 3 characters.</p>
+<pre><code>propertime('20260612000101AM').add(-1, 'SEC').sec</code>
+<samp>240</samp></pre>
+<p>The stored 3-digit stamp parses back without any special handling:</p>
+<pre><code>propertime('202606031157241PM').toString()</code>
+<samp>2026 06⁄03 11:57:241 PM</samp></pre>
+
+<h3>Can I pass a form field through unchecked?</h3>
+<p>Not if it can contain 00 minutes or seconds. The parser does not reject a 00 second, it reads it as a step back across the boundary, so the value silently lands on the previous day.</p>
+<pre><code>propertime('20260612000100AM').toString()</code>
+<samp>2026 06⁄11 11:57:240 PM</samp></pre>
+<p>Validate the range 01 to 60 yourself before the string reaches the parser.</p>
+
+<h3>Where did 12 o'clock go?</h3>
+<p>There is no hour 12 anywhere in the system. The hour after 11:60:60 AM carries hour 00 and meridiem PM. A display layer that special-cases 12 for noon and midnight, the way standard formatters do, prints a wrong value here. The hour field is rendered as it is.</p>
+<pre><code>const noon = propertime('20260612116060AM').add(1, 'SEC')
+noon.hr + ' ' + noon.ampm</code>
+<samp>00 PM</samp></pre>
+
+<h3>How long is the last minute of the day?</h3>
+<p>It runs to 240 seconds normally. From 11:57:01 PM, 239 more seconds still sit inside the same minute:</p>
+<pre><code>propertime('20260612115701PM').add(239, 'SEC').toString()</code>
+<samp>2026 06⁄12 11:57:240 PM</samp></pre>
+<p>One further second crosses into the next day:</p>
+<pre><code>propertime('20260612115701PM').add(240, 'SEC').toString()</code>
+<samp>2026 06⁄13 00:01:01 AM</samp></pre>
+<p>On a leap-second day of the 11-day cycle the same minute holds one second more, and June 3 of 2026 is such a day because its Julian Day Number, 2461195, divides by 11:</p>
+<pre><code>propertime('20260603115701PM').add(240, 'SEC').toString()</code>
+<samp>2026 06⁄03 11:57:241 PM</samp></pre>
+<p>So neither 60 nor 240 is a safe ceiling to hardcode for a minute.</p>
+
+<h3>Is plain second arithmetic safe across that stretched minute?</h3>
+<p>Yes. The engine absorbs the leap minute internally, so adding 86,400 seconds lands exactly where adding one day lands. Use whichever unit reads better, the results agree.</p>
+<pre><code>propertime('20260612000101AM').add(86400, 'SEC').toString()</code>
+<samp>2026 06⁄13 00:01:01 AM</samp></pre>
+<pre><code>propertime('20260612000101AM').add(1, 'DAYS').toString()</code>
+<samp>2026 06⁄13 00:01:01 AM</samp></pre>
+
+<h3>How do I send a value over JSON or store it in a row?</h3>
+<p>Concatenate the fields back into the wire format the parser reads. The fields are already zero-padded, so the round trip is exact. Append the tag when it is not empty, the overlap years need it.</p>
+<pre><code>const t = propertime('20260612093101AM')
+const wire = t.year + t.month + t.day + t.hr + t.min + t.sec + t.ampm
+propertime(wire).toString() === t.toString()</code>
+<samp>true</samp></pre>
+<p>Do not store the output of <code>toString</code> instead, it is a display form, the parser does not read it back, and the <a href="#advice">round-trip answer</a> later in this manual shows the mangling.</p>
+
+<h3>How do I index dates in a database?</h3>
+<p>For modern data the wire stamp itself sorts correctly, because the format runs big to small, year then month then day, so alphabetical order is chronological order while the years keep the same width:</p>
+<pre><code>['20261105', '20260612', '20250101'].sort().join(' ')</code>
+<samp>20250101 20260612 20261105</samp></pre>
+<p>The caveat is the width of the year, which is not padded, so once the data crosses into years of another length, three digits, five digits, or the A.C. side, string order breaks. For data that leaves the modern window, store the Julian Day Number as an integer key, it is what the library itself uses as common ground between the calendars:</p>
+<pre><code>propertime.toJDN(2026, 6, 12)</code>
+<samp>2461204</samp></pre>
+
+<h3>How do I write a five minutes ago label?</h3>
+<p>Step the current time back 300 seconds. The block reads the current clock, so its output differs from load to load.</p>
+<pre><code>propertime().add(-300, 'SEC').toString()</code>
+<samp>2026 06⁄12 03:14:16 PM</samp></pre>
+
+<h3>My users are not in Japan, what do I show them?</h3>
+<p>The baseline is JST and GMT is 9 hours behind it, so a London clock is the current time at offset <code>M9</code>. These two blocks also read the current clock.</p>
+<pre><code>propertime(null, 'M9').toString()</code>
+<samp>2026 06⁄12 06:10:04 AM</samp></pre>
+<p>British Summer Time remains your decision, because the library never applies it by itself. Pass <code>true</code> and the hour is added:</p>
+<pre><code>propertime(null, 'M9', true).toString()</code>
+<samp>2026 06⁄12 07:10:04 AM</samp></pre>
+
+<h3>How many days until my deadline?</h3>
+<pre><code>propertime.jdnDiff(2026, 6, 12, 2027, 1, 1)</code>
+<samp>203</samp></pre>
+
+<h3>What happens to historical data crossing September 1752?</h3>
+<p>Day arithmetic steps over the eleven wiped days on its own, and the style tag flips with it. One day after September 2 is September 14, and the result comes back tagged N.S. automatically.</p>
+<pre><code>propertime('17520902000101AM O.S.').add(1, 'DAYS').toString()</code>
+<samp>1752 09⁄14 00:01:01 AM N.S.</samp></pre>
+
+<h3>Can it do milliseconds, microseconds, atomic precision?</h3>
+<p>No. The second is the smallest unit anywhere in the system, in the fields, in the parser, and in <code>add</code>. This is a human clock, sub-second timing belongs to a different craft, and I can not claim the qualification to code it. Feeding a fraction in does not extend the precision, it only breaks the field, as the example below shows, so keep your quantities whole.</p>
+<pre><code>propertime('20260612000101AM').add(0.5, 'SEC').toString()</code>
+<samp>2026 06⁄12 00:01:1.5 AM</samp></pre>
+
+<h3>What does garbage input do?</h3>
+<p>It throws. The parser fails fast on impossible dates instead of normalizing them the way the standard Date object does, so wrap the parsing of user input in a try block and treat the message as the validation result.</p>
+<pre><code>let msg = 'parsed fine'
+try { propertime('20260230000101AM') } catch (e) { msg = e.message }
+msg</code>
+<samp>Invalid date.</samp></pre>
+</section>
+
+<section id="database">
+<h2>Databasing, storing and querying stamps</h2>
+<p>The SQL in this chapter is fixed text, since a browser does not run SQL, and each statement is therefore paired with its JavaScript equivalent. The equivalence holds because a stamp is plain ASCII, and the byte order an engine uses to compare TEXT agrees with the code-unit order JavaScript uses to compare strings.
+
+<h3>How do I store it, and would anything break?</h3>
+<p>Store the raw wire stamp in a plain text column and nothing breaks, because to the engine the stamp is an opaque string, stored, compared, and returned byte for byte, while all parsing and arithmetic stay in your code. The library is one file and runs in any JavaScript host, so a backend in another language, for example PHP, can hand stamps to it through a Node process or an embedded JavaScript engine, and the rows themselves never need the library at all. Validation happens in code before the INSERT, as the cases chapter does for the 00 second, because a CHECK constraint cannot carry the notation's rules, the 01 floors and the 240 ceiling that rises to 241 on the cycle days.</p>
+<pre><code>CREATE TABLE events (
+  id      INTEGER PRIMARY KEY,
+  title   TEXT NOT NULL,
+  stamp   VARCHAR(20) NOT NULL,
+  jdn     INTEGER NOT NULL,
+  timekey TEXT NOT NULL
+)</code></pre>
+<p>The <code>jdn</code> and <code>timekey</code> columns are derived keys explained under the ordering question below, written once at INSERT from the same value the stamp came from. The six rows below serve the examples of this chapter:</p>
+<pre><code>INSERT INTO events (title, stamp, jdn, timekey) VALUES
+  ('spring deadline',   '20260530101010AM',      2461191, 'AM1010010'),
+  ('leap minute end',   '202606031157241PM',     2461195, 'PM1157241'),
+  ('morning meeting',   '20260612093101AM',      2461204, 'AM0931001'),
+  ('afternoon meeting', '20260612003101PM',      2461204, 'PM0031001'),
+  ('july start',        '20260701000101AM',      2461223, 'AM0001001'),
+  ('styled history',    '17520902000101AM O.S.', 2361221, 'AM0001001')</code></pre>
+<p>Though it is apt to say that <code>stamp</code> is enough by itself for modern times.</p>
+<h3>Is VARCHAR(20) wide enough?</h3>
+<p>For the modern window yes. A modern stamp runs 16 characters, the leap minute adds one for its 3-digit second, and a five-digit year would add one more, so 20 holds everything the present era writes. The mandatory style tags of the overlap years push a stamp to 21 and 22 characters, and A.C. years grow with their digits without a bound, so historical data either sizes the column for its era or leans on the JDN key from the cases chapter. Engines also differ on enforcement. SQLite records a declared width and never enforces it, so a 21-character stamp enters a VARCHAR(20) column unchanged, while stricter engines truncate or refuse, and the declared width therefore matters on every engine except SQLite. A modern stamp, a leap-minute stamp, and the tagged stamp of 1752 have these lengths:</p>
+<pre><code>const wire = t => t.year + t.month + t.day + t.hr + t.min + t.sec + t.ampm + (t.tag ? ' ' + t.tag : '')
+const a = wire(propertime('20260612093101AM'))
+const b = wire(propertime('20260612000101AM').add(-1, 'SEC'))
+const c = wire(propertime('17520902000101AM O.S.'))
+a.length + ', ' + b.length + ', ' + c.length</code>
+<samp>16, 17, 21</samp></pre>
+
+<h3>Does it convert to ISO 8601?</h3>
+<p>No. None of the twenty formats is ISO 8601, and none contains even an ISO date shape:</p>
+<pre><code>propertime('20260612000101AM').toAltFormats().filter(f => /\d{4}-\d{2}-\d{2}/.test(f)).length</code>
+<samp>0</samp></pre>
+<p>Nor can a faithful field-for-field conversion exist, because ISO 8601 rests on an 86,400-second day with hours 00 to 23 and minutes and seconds 00 to 59, while this notation has no hour 12, no 00 minute or second, and a last minute of 240 seconds and more. Where an external system demands ISO 8601, the translation belongs to your own layer, and it will not survive the leap minute intact.</p>
+
+<h3>Does ORDER BY put stamps in time order?</h3>
+<p>The order holds to the day and fails within the day. The date digits lead the string, so stamps of one year width sort chronologically by day, as the cases chapter showed. Inside one day the meridiem sits at the tail where it cannot influence the comparison, so an afternoon stamp whose hour digits are small sorts ahead of a morning stamp whose hour digits are large:</p>
+<pre><code>['20260612003101PM', '20260612093101AM'].sort().join(' ')</code>
+<samp>20260612003101PM 20260612093101AM</samp></pre>
+<p>The remedy is the pair of derived key columns from the schema above. <code>jdn</code> carries <code>propertime.toJDN</code> of the date and orders the days across any year width, and <code>timekey</code> carries the meridiem first and then the time fields, with the second padded to 3 digits because the leap minute writes a 240 where ordinary minutes write at most a 60, and the strings only compare correctly at one width:</p>
+<pre><code>const key = t => t.ampm + t.hr + t.min + t.sec.padStart(3, '0')
+const morning = key(propertime('20260612093101AM'))
+const afternoon = key(propertime('20260612003101PM'))
+morning + ' ' + afternoon + ' ' + (morning &lt; afternoon)</code>
+<samp>AM0931001 PM0031001 true</samp></pre>
+<pre><code>SELECT stamp FROM events ORDER BY jdn, timekey</code></pre>
+
+<h3>How do I query a date range?</h3>
+<p>A range of dates is selected with the date digits as string bounds. Every stamp of June 2026 begins with 202606, every stamp of an earlier month compares below that, and every stamp of a later month compares at or above 202607, whatever time of day the stamp carries. Against the rows above, a query would return the three stamps of June 2026, the leap-minute stamp of June 3 among them:</p>
+<pre><code>SELECT stamp FROM events
+WHERE stamp >= '202606' AND stamp &lt; '202607'
+ORDER BY jdn, timekey</code></pre>
+<p>The comparison behaves identically on plain strings:</p>
+<pre><code>['20260530101010AM', '20260612093101AM', '20260701000101AM'].filter(s => s >= '202606' &amp;&amp; s &lt; '202607').join(' ')</code>
+<samp>20260612093101AM</samp></pre>
+<p>The bound trick carries the same caveat as the sorting, it holds while the years keep one width, and data of mixed widths queries on the <code>jdn</code> column instead, WHERE jdn BETWEEN the two day numbers.</p>
+
+<h3>How many days lie between two stored dates?</h3>
+<p>The <code>jdn</code> columns subtract as plain integers, so the number of days between two rows is a single subtraction in the query, and the same number comes from the library directly:</p>
+<pre><code>SELECT b.jdn - a.jdn AS days FROM events a, events b
+WHERE a.title = 'morning meeting' AND b.title = 'july start'</code></pre>
+<pre><code>propertime.toJDN(2026, 7, 1) - propertime.toJDN(2026, 6, 12)</code>
+<samp>19</samp></pre>
+
+<h3>Two users share one calendar and write at the same moment, whose write wins?</h3>
+<p>That question lies outside the stamp. The stamp names the instant to the second and no finer, two writes inside one second carry equal stamps, and an equal stamp gives the engine no tiebreaker. Which write lands is decided by the database's own locking, transactions, and conflict rules, so the answer is configured in the database, and the notation neither helps nor hinders that configuration.</p>
+</section>
+
+<section id="try">
+<h2>Try it in the browser</h2>
+<p>This chapter computes nothing ahead of time. Type a timestamp, pick a step, and the script at the foot of the page runs the library on what you typed, so the outputs and the month table below are recomputed at every keystroke. The default step of -300 SEC answers what the moment was five minutes earlier. If the input does not parse, the first line shows the parser's message. This chapter is the one part of the manual that needs the script, everything else reads without it.</p>
+
+<p><label>Timestamp <input id="try-date" value="20260612000101AM" size="28"></label></p>
+<p><label>Step <input id="try-amount" type="number" value="-300"></label>
+<label>Unit <select id="try-unit">
+<option>SEC</option>
+<option>MIN</option>
+<option>HRS</option>
+<option>DAYS</option>
+<option>WEEK</option>
+<option>MON</option>
+<option>YRS</option>
+<option>DEC</option>
+<option>CEN</option>
+<option>MIL</option>
+</select></label></p>
+
+<dl>
+<dt>toString</dt><dd><output id="try-string"></output></dd>
+<dt>After the step</dt><dd><output id="try-moved"></output></dd>
+<dt>Wire stamp</dt><dd><output id="try-stamp"></output></dd>
+<dt>Old Turkic</dt><dd><output id="try-turkic"></output></dd>
+<dt>English regnal</dt><dd><output id="try-regnal"></output></dd>
+<dt>Month</dt><dd><output id="try-month"></output></dd>
+</dl>
+
+<p>The wall calendar of the typed month, built from <code>getclndrmodern</code>, which serves years 1800 and later:</p>
+<table id="try-grid"></table>
+</section>
+
+<section id="tests">
+<h2>Live tests</h2>
+<p>The list below is drawn from the <a href="https://momentjs.com/guides/">Moment.js project guides</a>, the <a href="https://bloomberg.github.io/js-blog/post/temporal/">nine-year history of the Temporal proposal</a>, and the <a href="https://nodesource.com/blog/javascript-temporal-history-nodejs-26">history of the Date object</a>.</p>
+<table id="tests-grid"></table>
+<p id="tests-total">The table fills when the page is loaded beside time.js.</p>
+</section>
+
+<section id="advice">
+<h2>« Can I »s</h2>
+<p>The questions below are shortcuts that developers commonly ask for, and the answer to each of them is no, given each time with the reason and with the way that works instead.</p>
+
+<h3>Can I keep the database in whatever the user typed?</h3>
+<p>No. A stored local time leaves open the question of whose locality it was written in, and every later reader of the row inherits that open question. Keep one canonical wire stamp in the row, the proper time itself, and localize at the edge where the user meets it. In the example below the stored row stays the same while the reading of it changes with the offset.</p>
+<pre><code>const stored = propertime('20260612093101AM')
+const wire = stored.year + stored.month + stored.day + stored.hr + stored.min + stored.sec + stored.ampm
+wire + ' stays in the row, a London reader sees ' + propertime(wire, 'M9').toString()</code>
+<samp>20260612093101AM stays in the row, a London reader sees 2026 06⁄12 00:31:01 AM</samp></pre>
+
+<h3>Can I feed the string it gave me back in, or is it one-way?</h3>
+<p>For the modern civil line it is one way, and the failure is silent, the parser does not throw. The display line carries separators the compact parser never expects, the fields shear apart, and the result is a wrong value with a six-digit year and NaN in every time field. The example below feeds a display line straight back in.</p>
+<pre><code>propertime(propertime('20260612093101AM').toString()).toString()</code>
+<samp>202606 12⁄09 NaN:NaN:NaN AM</samp></pre>
+<p>So never store or resend a display line, the two-way form is the wire stamp built from the fields, shown in the first answer of this chapter. There is one exception in the other direction. The canonical deep-time lines belong to the parser's own grammar, so for an ancient date the display line does round-trip exactly:</p>
+<pre><code>const a = propertime('20000101000101AM A.C.')
+propertime(a.toString()).toString() === a.toString()</code>
+<samp>true</samp></pre>
+<p>One caveat remains even there. The formal line drops fields at value 1 unless the verbose flag is set, as the examples chapter shows, and a line with dropped fields does not parse back:</p>
+<pre><code>let msg = ''
+try { propertime('776ᵗʰ YRS’s AKHET 00:01:01 AM') } catch (e) { msg = e.message }
+msg</code>
+<samp>Invalid date.</samp></pre>
+<p>So an ancient display line meant for storage should be the full line, the one that names every field.</p>
+
+<h3>Can I set M9 as a global tag, since all my users are in one country?</h3>
+<p>No. Although it simplifies the logging, it creates a language barrier for other propertime users, your stamps stop meaning what theirs mean. As the creator I would suggest to use, well, the proper time, then give the users a simple form. Something like the selector below, alarm-clock style, a direction, hours, and minutes, which writes the offset string for you and shows that clock running. Let users do their stuff and do not touch it unless necessary. You may add pre-ready checks in your own layer, if their daylight saving is not strictly one hour you may fix it there. This is a suggestion though, if it works it works. The selector carries the only CSS in this manual, as a demo of what the form can be in your own page, while the document around it stays bare.</p>
+<p id="tz-form"><label>Direction <select id="tz-sign">
+<option value="">ahead of Japan</option>
+<option value="M">behind Japan</option>
+</select></label>
+<label>Hours <select id="tz-hrs">
+<option>0</option>
+<option>1</option>
+<option>2</option>
+<option>3</option>
+<option>4</option>
+<option>5</option>
+<option>6</option>
+<option>7</option>
+<option>8</option>
+<option>9</option>
+<option>10</option>
+<option>11</option>
+<option>12</option>
+<option>13</option>
+<option>14</option>
+</select></label>
+<label>Minutes <select id="tz-min">
+<option value="">00</option>
+<option value="F1TO4">15</option>
+<option value="F1TO2">30</option>
+<option value="F3TO4">45</option>
+</select></label>
+<label>Daylight saving <input id="tz-dst" type="checkbox"></label></p>
+<dl>
+<dt>Offset string</dt><dd><output id="tz-str"></output></dd>
+<dt>That clock right now</dt><dd><output id="tz-clock"></output></dd>
+</dl>
+
+<h3>Shall I apply daylight saving for the user myself?</h3>
+<p>No. The engine never moves the clock for daylight saving and your layer should not guess either, the flag is the user's to set. When it is set, the hour added is exactly one, the two examples below differ by nothing else.</p>
+<pre><code>propertime('20260612100101AM', 'M9').toString()</code>
+<samp>2026 06⁄12 01:01:01 AM</samp></pre>
+<pre><code>propertime('20260612100101AM', 'M9', true).toString()</code>
+<samp>2026 06⁄12 02:01:01 AM</samp></pre>
+
+<h3>Can I zero-pad the year so the columns line up?</h3>
+<p>No, although the parser itself forgives the padding and reads the same instant from a padded year:</p>
+<pre><code>propertime('020260612000101AM').toString() === propertime('20260612000101AM').toString()</code>
+<samp>true</samp></pre>
+<p>Yet the padded stamp sorts ahead of everything unpadded, here a November lands before a June, so an index built on the lined-up column returns the wrong order. Keep years unpadded, and for data of mixed year widths sort on the Julian Day Number as shown in the cases chapter.</p>
+<pre><code>['020261105000101AM', '20260612000101AM'].sort().join(' ')</code>
+<samp>020261105000101AM 20260612000101AM</samp></pre>
+</section>
+
+<section id="paq">
+<h2>PAQ, possible askable questions</h2>
+<dl>
+<dt>How far back does it run, and do all the formats run that far?</dt>
+<dd><p>The day count itself has no practical floor, it runs past the Sumerian kings into Stonehenge deep time, where years do not exist and the canonical line is given in laps and holes instead. Each named format has its own era window, and outside it the format table shows a dash. The Old Turkic overlay alone is computed across the whole line.</p>
+<pre><code>propertime('3000000101000101AM A.C.').toString()</code>
+<samp>707ᵗʰ LAP’s 40ᵗʰ HOL’s 271ˢᵗ DAYS 00:01:01 AM</samp></pre></dd>
+
+<dt>How far forward does the regnal format run?</dt>
+<dd><p>It runs to the reigning monarch, whose reign has no end written in the table, and so the current reign extrapolates forward without a bound.</p>
+<pre><code>propertime('21000101000101AM').toAltFormats()[18]</code>
+<samp>CHARLES III’s 78ᵗʰ YRS’s 4ᵗʰ MON’s 25ᵗʰ DAYS 00:01:01 AM</samp></pre></dd>
+
+<dt>I have dates of people in O.S., N.S., or unlabeled, is the regnal result the real result, or is there a mismatch?</dt>
+<dd><p>The regnal result is the real one when the label matches how the date was recorded, because every input funnels through the one day count and the regnal table reads nothing else. Unlabeled dates resolve to the English civil reckoning of their era, Old Style before 1752 with the Lady Day year, New Style after, which is also how English lives were written down, so an English-sourced date passes through as recorded. Queen Anne died on 1 August 1714, and on that exact day the table still returns her reign:</p>
+<pre><code>propertime('17140801000101AM').toAltFormats()[18]</code>
+<samp>ANNE’s 13ᵗʰ YRS’s 5ᵗʰ MON’s 25ᵗʰ DAYS 00:01:01 AM</samp></pre>
+<p>The demise day itself prints the departing sovereign, and the successor's count begins on that same day, so the morrow of the accession already reads as the second day:</p>
+<pre><code>propertime('17140802000101AM').toAltFormats()[18]</code>
+<samp>GEORGE I’s 2ⁿᵈ DAYS 00:01:01 AM</samp></pre>
+<p>The mismatch risk comes from the year label rather than from the table. Contemporaries wrote the execution of Charles I as 30 January 1648, the year by Lady Day reckoning, and typed as written it lands rightly in his final days:</p>
+<pre><code>propertime('16480130000101AM').toAltFormats()[18]</code>
+<samp>CHARLES I’s 24ᵗʰ YRS’s 11ᵗʰ MON’s 4ᵗʰ DAYS 00:01:01 AM</samp></pre>
+<p>Modernize that year yourself to 1649 and the parser takes the year as written and shifts it by Lady Day again, so you land a whole year onward, in the interregnum:</p>
+<pre><code>propertime('16490130000101AM').toAltFormats()[18]</code>
+<samp>KEEPERS OF THE LIBERTY’s 2ⁿᵈ YRS 00:01:01 AM</samp></pre>
+<p>So feed old dates exactly as the records wrote them and let the parser do the shifting. A continental New Style date inside the Old Style window is refused outright rather than mangled, convert such dates to the English reckoning in your own layer before parsing:</p>
+<pre><code>let msg = ''
+try { propertime('17140801000101AM N.S.') } catch (e) { msg = e.message }
+msg</code>
+<samp>Invalid date.</samp></pre>
+<p>The second half of the question is whether the count itself is correct, whether Anne had truly reigned that long, whether Charles III is really that deep into his reign, and the counts hold to the historical record one reign at a time. Anne acceded on 8 March 1702, written 8 March 1701 the Old Style way, and the engine opens her count on that very day, so the morrow already reads the second day:</p>
+<pre><code>propertime('17010309000101AM').toAltFormats()[18]</code>
+<samp>ANNE’s 2ⁿᵈ DAYS 00:01:01 AM</samp></pre>
+<p>From an accession on 8 March 1702, the first of August 1714 falls in the thirteenth year, so the line printed on her last day is the correct one. The precision holds deep into the middle ages, William the Conqueror was crowned on Christmas Day 1066 and his count opens on the coronation:</p>
+<pre><code>propertime('10661226000101AM').toAltFormats()[18]</code>
+<samp>WILLIAM I’s 2ⁿᵈ DAYS 00:01:01 AM</samp></pre>
+<p>For Charles III both the year and the day are true. He acceded on 8 September 2022, the accession day itself prints Elizabeth II deep in her seventy-first year, by the demise-day rule above, and the morrow already reads his second day:</p>
+<pre><code>propertime('20220908000101AM').toAltFormats()[18]</code>
+<samp>ELIZABETH II’s 71ˢᵗ YRS’s 8ᵗʰ MON’s 3ʳᵈ DAYS 00:01:01 AM</samp></pre>
+<pre><code>propertime('20220909000101AM').toAltFormats()[18]</code>
+<samp>CHARLES III’s 2ⁿᵈ DAYS 00:01:01 AM</samp></pre>
+<p>His fourth year opens on the true anniversary, 8 September 2025, and runs on through 2026:</p>
+<pre><code>propertime('20250908000101AM').toAltFormats()[18]</code>
+<samp>CHARLES III’s 4ᵗʰ YRS 00:01:01 AM</samp></pre>
+<p>Victoria holds the same way, her accession of 20 June 1837 prints William IV's last day and the morrow her second:</p>
+<pre><code>propertime('18370621000101AM').toAltFormats()[18]</code>
+<samp>VICTORIA’s 2ⁿᵈ DAYS 00:01:01 AM</samp></pre>
+<p>So the years agree with the record and the days agree with it too, on both sides of the change of style. One reservation attaches to the whole answer. The anchors grow coarser as the table runs further back, because the chronicle that supplies them grows coarse itself, and where the record gives a year and no day, the reign is anchored on the first of January of that year, which is exactly where the earliest Wessex counts open:</p>
+<pre><code>propertime('5190102000101AM').toAltFormats()[18]</code>
+<samp>CERDIC’s 2ⁿᵈ DAYS 00:01:01 AM</samp></pre>
+<pre><code>propertime('8020102000101AM').toAltFormats()[18]</code>
+<samp>ECGBERHT’s 2ⁿᵈ DAYS 00:01:01 AM</samp></pre>
+<p>That imprecision comes from the record and not from the library, for the chronicle is the only source there is, and where it gives no day the first of January stands as a declared placeholder rather than as a claim that the day is known.</p></dd>
+
+<dt>Where is the Old Turkic cycle anchored?</dt>
+<dd><p>The cycle is anchored at year 1, which falls 4 years after the birth of jeshua, so it keys to the year count and not to the birth itself. The Turkic year opens in spring, and its first month ARAM falls in March of year 1.</p>
+<pre><code>propertime('10301000101AM').toAltFormats()[11]</code>
+<samp>1ˢᵗ ROOSTER YRS , 1ˢᵗ MON , 1ˢᵗ DAY 00:01:01 AM</samp></pre>
+<p>January of year 1 still belongs to the closing months of the cycle before it:</p>
+<pre><code>propertime('10101000101AM').toAltFormats()[11]</code>
+<samp>1ˢᵗ MONKEY YRS , 11ᵗʰ MON , 1ˢᵗ DAY 00:01:01 AM</samp></pre></dd>
+
+<dt>Does the Holocene flag change the birth logic?</dt>
+<dd><p>The birth keeps its role under the flag, for a date before the birth keeps its A.C. beside the Holocene year. The I.P. tag shifts its duty there, in Holocene display it marks only dates before the Holocene zero, and the boundary years lose it because their Holocene year is already unambiguous.</p>
+<pre><code>JSON.stringify(propertime('100101000101AM A.C.').getMeta(true))</code>
+<samp>{"displayYear":"9&nbsp;990","suffix":" A.C."}</samp></pre>
+<pre><code>JSON.stringify(propertime('20101000101AM I.P.').getMeta(true))</code>
+<samp>{"displayYear":"9&nbsp;998","suffix":""}</samp></pre>
+<pre><code>JSON.stringify(propertime('100500101000101AM A.C.').getMeta(true))</code>
+<samp>{"displayYear":"51","suffix":" A.C. I.P."}</samp></pre></dd>
+
+<dt>Is an I.P. year still a minus year?</dt>
+<dd><p>Yes. The year field stays negative, the tag only says the span is not Ante Christum, since the birth came earlier than year 1.</p>
+<pre><code>propertime('20101000101AM I.P.').year</code>
+<samp>-2</samp></pre></dd>
+
+<dt>Does it forgive saying A.C. in place of I.P.?</dt>
+<dd><p>Yes, in both directions. The parser reads either tag as the minus sign and nothing more, then the display layer assigns the proper tag from the date itself. Type A.C. on the post-birth year 2 and it comes back corrected:</p>
+<pre><code>JSON.stringify(propertime('20101000101AM A.C.').getMeta().suffix)</code>
+<samp>" I.P."</samp></pre>
+<p>Both spellings parse to the very same value:</p>
+<pre><code>propertime('20101000101AM I.P.').toString() === propertime('20101000101AM A.C.').toString()</code>
+<samp>true</samp></pre>
+<p>And the reverse forgiveness holds, an I.P. on a year deep before the birth comes back as A.C.:</p>
+<pre><code>JSON.stringify(propertime('1000101000101AM I.P.').getMeta().suffix)</code>
+<samp>" A.C."</samp></pre></dd>
+
+<dt>Which leap year rule applies?</dt>
+<dd><p>The English rule of the era applies. Before September 1752 the engine keeps the Julian rule, every fourth year, so the year 1700 has its February 29. After the change the Gregorian rule holds, 2024 is leap, 1900 and 2100 are not. The labeling needs care, because under Old Style the civil year for January through March 24 runs one behind, so the historical 29 February 1700 is reached by typing year 1699.</p>
+<pre><code>propertime('16990229000101AM').toString()</code>
+<samp>1700 02⁄29 00:01:01 AM O.S.</samp></pre>
+<pre><code>propertime('20240229000101AM').toString()</code>
+<samp>2024 02⁄29 00:01:01 AM</samp></pre>
+<pre><code>let msg = ''
+try { propertime('21000229000101AM') } catch (e) { msg = e.message }
+msg</code>
+<samp>Invalid date.</samp></pre></dd>
+
+<dt>What is the internal epoch?</dt>
+<dd><p>The Julian Day Number is the common ground every conversion passes through, and its day zero falls deep in the fifth millennium before year 1, read here in the engine's own civil reckoning, where ancient months follow the Roman order.</p>
+<pre><code>JSON.stringify(propertime.fromJDN(0))</code>
+<samp>{"y":-4713,"m":3,"d":20}</samp></pre></dd>
+
+<dt>Does it ship a time zone database?</dt>
+<dd><p>No. Offsets are explicit strings against the JST baseline, the library resolves no zone names and carries no table of them. That mapping belongs to your layer, as the selector in the chapter above suggests.</p></dd>
+
+<dt>Is it immutable, and what does it depend on?</dt>
+<dd><p>It is immutable, as the live tests chapter shows, and it depends on nothing beyond itself, being one file that serves Node, AMD, and the bare browser.</p></dd>
+
+<dt>Does it speak locales?</dt>
+<dd><p>There is no locale system. The outputs are fixed, English for the civil and regnal lines, the era tongues for the rest, Turkic runic spelling, Egyptian seasons, Sumerian kings. Where you need translation, that work belongs to your layer.</p></dd>
+
+<dt>Can it do sub-second precision?</dt>
+<dd><p>No. The second is the smallest unit in the system, and the cases chapter answers the same question in full.</p></dd>
+</dl>
+</section>
+
+<section id="errors">
+<h2>Errors</h2>
+<p>The library throws instead of guessing, and these are the cases:</p>
+<ul>
+<li>A timestamp string shorter than 11 characters after suffixes are stripped: <code>Invalid propertime string</code>.</li>
+<li>A date that does not exist on the calendar in force, including the eleven wiped days of September 1752: <code>Invalid date.</code></li>
+<li>A date in 1752, or in the 1154/1155 overlap, without an <code>O.S.</code> or <code>N.S.</code> suffix: <code>Invalid date.</code> These years are ambiguous and the suffix is mandatory.</li>
+<li>A suffix that contradicts the year, such as <code>O.S.</code> on a year only the new style reaches: <code>Invalid date.</code></li>
+<li>An unknown Sumerian king name or ID in a deep-time input string: <code>Invalid Sumerian King</code>.</li>
+<li>A canonical deep-time line with fields missing, such as a formal line whose value-1 fields were dropped because <code>verbose</code> was off: <code>Invalid date.</code></li>
+<li><code>getclndrmodern</code> with a year before 1800: <code>Invalid date.</code></li>
+</ul>
+<p>One case that looks like an error but is not: <code>00</code> in the seconds place is read as a step back across the previous boundary, so an input ending in <code>0100AM</code> for the start of a day returns the previous day's leap minute rather than throwing.</p>
+</section>
+
+<section id="ancient">
+<h2>Footnote, ancient dates</h2>
+<p>None of this touches modern dates, it applies only when you work before the Roman calendar reform. Before 45 A.C. Month 01 is Martius, not January, and the months follow the old Roman order. Before 713 A.C. January and February do not exist at all, and the winter is an uncounted gap held in Month 90. Months 91, 92, and 93 are the Roman intercalary months, Mercedonius, Intercalaris Prior, and Intercalaris Posterior, and such months stretch well past 31 days. For dates this old, <code>toString</code> already returns the canonical deep-time line of the era, and <code>getclndr</code> draws the calendar in the matching frame.</p>
+</section>
+
+<script src="time.js"></script>
+<script>
+if (typeof propertime === 'function') {
+  document.querySelectorAll('#examples pre, #cases pre, #database pre, #advice pre, #paq pre').forEach(function (p) {
+    var c = p.querySelector('code');
+    var s = p.querySelector('samp');
+    if (!c || !s) return;
+    try {
+      s.textContent = String(eval(c.textContent));
+    } catch (e) {
+      s.textContent = e.message;
+    }
+  });
+
+  var alts = propertime('20260612000101AM').toAltFormats();
+  document.querySelectorAll('#alt-table tbody tr').forEach(function (row, i) {
+    var cell = row.cells[2].querySelector('code');
+    if (cell && alts[i] !== undefined) cell.textContent = alts[i];
+  });
+
+  var tryDate = document.getElementById('try-date');
+  var tryAmount = document.getElementById('try-amount');
+  var tryUnit = document.getElementById('try-unit');
+  var renderTry = function () {
+    var out = {
+      string: document.getElementById('try-string'),
+      moved: document.getElementById('try-moved'),
+      stamp: document.getElementById('try-stamp'),
+      turkic: document.getElementById('try-turkic'),
+      regnal: document.getElementById('try-regnal'),
+      month: document.getElementById('try-month')
+    };
+    var grid = document.getElementById('try-grid');
+    grid.textContent = '';
+    var t;
+    try {
+      t = propertime(tryDate.value.trim());
+    } catch (e) {
+      out.string.textContent = e.message;
+      ['moved', 'stamp', 'turkic', 'regnal', 'month'].forEach(function (k) {
+        out[k].textContent = '';
+      });
+      return;
+    }
+    var f = t.toAltFormats();
+    out.string.textContent = t.toString();
+    out.stamp.textContent = t.year + t.month + t.day + t.hr + t.min + t.sec + t.ampm + (t.tag ? ' ' + t.tag : '');
+    out.turkic.textContent = f[10];
+    out.regnal.textContent = f[18];
+    try {
+      out.moved.textContent = t.add(parseInt(tryAmount.value, 10) || 0, tryUnit.value).toString();
+    } catch (e) {
+      out.moved.textContent = e.message;
+    }
+    try {
+      var cal = propertime.getclndr(tryDate.value.trim(), 'NATIVE');
+      var mon = cal[parseInt(t.month, 10) - 1];
+      out.month.textContent = mon ? mon.title + ', ' + mon.days.length + ' days' : '';
+    } catch (e) {
+      out.month.textContent = e.message;
+    }
+    try {
+      var mObj = propertime.getclndrmodern(tryDate.value.trim()).calendar[parseInt(t.month, 10) - 1];
+      var cap = document.createElement('caption');
+      cap.textContent = mObj.title + ' ' + t.year;
+      grid.appendChild(cap);
+      var thead = document.createElement('thead');
+      var hrow = document.createElement('tr');
+      mObj.weekdays.forEach(function (w) {
+        var th = document.createElement('th');
+        th.textContent = w;
+        hrow.appendChild(th);
+      });
+      thead.appendChild(hrow);
+      grid.appendChild(thead);
+      var tbody = document.createElement('tbody');
+      mObj.rows.forEach(function (r) {
+        var tr = document.createElement('tr');
+        r.forEach(function (d) {
+          var td = document.createElement('td');
+          td.textContent = d;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      grid.appendChild(tbody);
+    } catch (e) {
+      var cap2 = document.createElement('caption');
+      cap2.textContent = e.message;
+      grid.appendChild(cap2);
+    }
+  };
+  [tryDate, tryAmount, tryUnit].forEach(function (el) {
+    el.addEventListener('input', renderTry);
+  });
+  renderTry();
+
+  var T = '20260612000101AM';
+  var tests = [
+    { want: 'Immutable values, a method call never changes the value it was called on', run: function () {
+      var a = propertime(T);
+      var before = a.toString();
+      a.add(99, 'DAYS');
+      return { ok: a.toString() === before, note: 'after add(99) the value still reads ' + a.toString() };
+    } },
+    { want: 'Strict parsing, impossible dates are rejected instead of rolled over', run: function () {
+      var thrown = '';
+      try { propertime('20260230000101AM') } catch (e) { thrown = e.message }
+      var rolled = new Date(2026, 1, 30).toDateString();
+      return { ok: thrown === 'Invalid date.', note: 'Date turns February 30 into ' + rolled + ', propertime throws ' + thrown };
+    } },
+    { want: 'Date arithmetic, which the native Date object never offered', run: function () {
+      var got = propertime(T).add(45, 'DAYS').toString();
+      return { ok: got === propertime('20260727000101AM').toString(), note: '45 days onward is ' + got };
+    } },
+    { want: 'Offset handling for users away from the baseline', run: function () {
+      var got = propertime('20260612100101AM', 'M9').toString();
+      return { ok: got === propertime('20260612010101AM').toString(), note: '10:01:01 AM at offset M9 is ' + got };
+    } },
+    { want: 'A choice of output formats', run: function () {
+      var n = propertime(T).toAltFormats().length;
+      return { ok: n === 20, note: n + ' renderings of one instant' };
+    } },
+    { want: 'Differences between two dates', run: function () {
+      var d = propertime.jdnDiff(2026, 1, 1, 2027, 1, 1);
+      return { ok: d === 365, note: 'the year 2026 spans ' + d + ' days' };
+    } },
+    { want: 'Serialization that survives the round trip', run: function () {
+      var t = propertime('20260612093101AM');
+      var wire = t.year + t.month + t.day + t.hr + t.min + t.sec + t.ampm;
+      return { ok: propertime(wire).toString() === t.toString(), note: wire + ' parses back to an equal value' };
+    } },
+    { want: 'Calendar data ready for widgets', run: function () {
+      var mon = propertime.getclndr(T, 'NATIVE')[5];
+      return { ok: mon.days.length === 30, note: mon.title + ' carries ' + mon.days.length + ' day numbers' };
+    } },
+    { want: 'Relative time labels', run: function () {
+      var s = propertime().add(-300, 'SEC').toString();
+      return { ok: s.length > 0, note: 'five minutes before this load was ' + s };
+    } },
+    { want: 'One file and no dependency tree', run: function () {
+      return { ok: typeof propertime === 'function', note: 'one script tag put the whole library on this page' };
+    } },
+    { want: 'Chained steps that return where they started', run: function () {
+      var got = propertime(T).add(7, 'DAYS').add(-7, 'DAYS').toString();
+      return { ok: got === propertime(T).toString(), note: 'a week there and back lands on ' + got };
+    } },
+    { want: 'Historical dates handled honestly', run: function () {
+      var got = propertime('17520902000101AM O.S.').add(1, 'DAYS').toString();
+      return { ok: got === propertime('17520914000101AM N.S.').toString(), note: 'the day after September 2, 1752 is ' + got };
+    } },
+    { want: 'Sound behavior at the day boundary', run: function () {
+      var s = propertime(T).add(-1, 'SEC').sec;
+      return { ok: s === '240', note: 'the second before the day starts reads ' + s };
+    } }
+  ];
+  var testsGrid = document.getElementById('tests-grid');
+  if (testsGrid) {
+    var thd = document.createElement('thead');
+    var hrow2 = document.createElement('tr');
+    ['Want', 'Result', 'Evidence from this load'].forEach(function (w) {
+      var th2 = document.createElement('th');
+      th2.textContent = w;
+      hrow2.appendChild(th2);
+    });
+    thd.appendChild(hrow2);
+    testsGrid.appendChild(thd);
+    var tb2 = document.createElement('tbody');
+    var passed = 0;
+    tests.forEach(function (t) {
+      var r;
+      try {
+        r = t.run();
+      } catch (e) {
+        r = { ok: false, note: e.message };
+      }
+      if (r.ok) passed++;
+      var tr2 = document.createElement('tr');
+      [t.want, r.ok ? 'PASS' : 'FAIL', r.note].forEach(function (v) {
+        var td2 = document.createElement('td');
+        td2.textContent = v;
+        tr2.appendChild(td2);
+      });
+      tb2.appendChild(tr2);
+    });
+    testsGrid.appendChild(tb2);
+    var total = document.getElementById('tests-total');
+    if (total) total.textContent = passed + ' of ' + tests.length + ' wants pass on this load.';
+  }
+
+  var tzSign = document.getElementById('tz-sign');
+  var tzHrs = document.getElementById('tz-hrs');
+  var tzMin = document.getElementById('tz-min');
+  var tzDst = document.getElementById('tz-dst');
+  if (tzSign) {
+    var renderTz = function () {
+      var str = tzSign.value + tzHrs.value + tzMin.value;
+      var note = tzDst.checked ? ' with the daylight flag set' : '';
+      document.getElementById('tz-str').textContent = "'" + str + "'" + note;
+      document.getElementById('tz-clock').textContent = propertime(null, str, tzDst.checked).toString();
+    };
+    [tzSign, tzHrs, tzMin, tzDst].forEach(function (el) {
+      el.addEventListener('change', renderTz);
+    });
+    renderTz();
+  }
+}
+document.querySelectorAll('section > h2').forEach(function (h) {
+  var a = document.createElement('a');
+  a.href = '#index';
+  a.textContent = 'back to index';
+  h.appendChild(document.createTextNode(' '));
+  h.appendChild(a);
+});
+</script>
+
+</body>
+</html>
