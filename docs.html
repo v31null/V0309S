@@ -37,6 +37,36 @@
 	font-family: ui-monospace, monospace;
 	font-size: 1.25em;
 }
+pre {
+  background: #f5f5f5;
+  color: #111;
+  padding: 1em;
+  margin: 1em 0;
+  border: 1px solid #ddd;
+  font-family: ui-monospace, monospace;
+  font-size: 0.95em;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre;
+  border-radius: 0.6em
+}
+pre code {
+  font-family: inherit;
+  color: inherit;
+  background: transparent;
+  padding: 0;
+  border: none;
+
+}
+*{
+  line-height: 1.3;
+}
+code{
+  background: #f5f5f5;
+  padding: 0.2em 0.4em;
+  border: 1px solid #ddd;
+  border-radius: 0.6em;
+}
 </style>
 </head>
 <body id="top">
@@ -640,7 +670,39 @@ JSON.parse(JSON.stringify({ stamp: s })).stamp === s</code>
 <dt>How far back does it run, and do all the formats run that far?</dt>
 <dd><p>The day count itself has no practical floor, it runs past the Sumerian kings into Stonehenge deep time, where years do not exist and the canonical line is given in laps and holes instead. Each named format has its own era window, and outside it the format table shows a dash. The Old Turkic overlay alone is computed across the whole line.</p>
 <pre><code>propertime('3000000101000101AM A.C.').toString()</code>
-<samp>707ᵗʰ LAP’s 40ᵗʰ HOL’s 271ˢᵗ DAYS 00:01:01 AM</samp></pre></dd>
+<samp>707ᵗʰ LAP’s 40ᵗʰ HOL’s 271ˢᵗ DAYS 00:01:01 AM</samp></pre>
+<p>The engine's BigInt translation layer is mathematically unbounded, it will successfully return complete, accurate calendar arrays for years spanning dozens of digits, both forward into the modern era and backward into Stonehenge deep time.</p>
+
+<pre><code>propertime('23568312759253262346436346436125072358392052 0517 110199AM A.C.').toString()</code>
+<samp></samp></pre>
+
+<pre><code>propertime('23568312759253262346436346436125072358392052 0517 1157239PM').toString()</code>
+<samp></samp></pre>
+
+<pre><code>propertime('23568312759253262346436346436125072358392052 0517 1157239PM').add(10, 'SEC')</code>
+<samp></samp></pre>
+
+
+<pre><code>propertime('235683127591532623464363464361250723583920510101000101AM').add(10000, 'YRS').year</code>
+<samp></samp></pre>
+
+<pre><code>propertime('23568312759153262346436346436125072358392051 0101 000101AM A.C.').add(1, 'YRS').add(2, 'MON').add(16, 'DAYS')</code>
+<samp></samp></pre>
+
+<pre><code>propertime('23568312759153262346436346436125072358392050 0317 000101AM A.C.').add(-1, 'YRS').add(-2, 'MON').add(-16, 'DAYS')</code>
+<samp></samp></pre>
+<pre><code>JSON.stringify(propertime.getclndrmodern('235683127591532623464323526743773473265123521634643612507235839205 0101 000101AM'))</code>
+<samp></samp></pre>
+<pre><code>propertime.getclndrmodern('235683127591532623464323526743773473265123521634643612507235839205 0101 000101AM').calendar[0].weekdays.join(',')</code>
+<samp></samp></pre>
+<pre><code>propertime.getclndrmodern('235683127591532623464323526743773473265123521634643612507235839206 0101 000101AM').calendar[0].weekdays.join(',')</code>
+<samp></samp></pre>
+<p>However; while the arrays return perfectly, the calendar is proleptic: it blindly overwrites physical reality with mathematical extrapolation, the reasons for this is outside of this project’s control.</p>
+<ol>
+<li>Human political structures, civil timekeeping, and planetary mechanics will inevitably change as‑so the engine simply projects the modern 12-month calendar and the reign of CHARLES III endlessly forward.</li>
+<li>The 400-year leap cycle is a civil approximation. Over tens of thousands of years, it loses tracking with the true solar year, extrapolating it by decillions of years guarantees it is entirely out of phase with the seasons, similarly; assuming the Stonehenge lunar standstill mechanics remain perfectly stable across infinity is simply our best mathematical bet to keep the deep-time scale running.</li>
+<li>The universe did not exist before ≈13.8 milliard years ago.</li>
+</ol>
 
 <dt>How far forward does the regnal format run?</dt>
 <dd><p>It runs to the reigning monarch, whose reign has no end written in the table, and so the current reign extrapolates forward without a bound.</p>
@@ -749,6 +811,7 @@ msg</code>
 
 <dt>Can it do sub-second precision?</dt>
 <dd><p>No. The second is the smallest unit in the system, and the cases chapter answers the same question in full.</p></dd>
+
 
 <dt>I work in sub-seconds, how do I do that here?</dt>
 <dd><p>By counting rather than dividing. The historical continuation of the notation would be pars minuta tertia and pars minuta quarta, the third and fourth small parts that the old reckoning set below the secunda, and as the developer I thought of adding them. The times have changed though, and what sub-second work needs in practice is not a finer wall reading but the order of events inside one second, so the third position is a counter and not a new division, and it is named numerus tertius rather than pars minuta tertia, because a counter is a number of a record and not a part of a minute.</p>
@@ -892,6 +955,15 @@ if (typeof propertime === 'function') {
 
   var T = '20260612000101AM';
   var tests = [
+    { want: 'Modern calendars generated flawlessly for decillion-year dates', run: function () {
+      var cal = propertime.getclndrmodern('235683127591532623464363464361250723583920510101000101AM');
+      var firstRow = cal.calendar[0].rows[0];
+      return { ok: firstRow.length === 7 && firstRow[0] === 1, note: 'January 1st begins a 7-day row starting at 1' };
+    } },
+    { want: 'Stonehenge calendars phase-locked and fully intact at decillion-year scales', run: function () {
+      var cal = propertime.getclndr('235683127592532623464363464361250723583920520101000101AM A.C.', 'AUTO');
+      return { ok: cal.length === 1 && cal[0].days.length === 365, note: 'returned exactly one stable Stonehenge HOL of 365 days' };
+    } },
     { want: 'Immutable values, a method call never changes the value it was called on', run: function () {
       var a = propertime(T);
       var before = a.toString();
