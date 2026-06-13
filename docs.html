@@ -850,26 +850,39 @@ $db->exec('COMMIT');</code></pre>
 <p>The length of a day on its own, read without stepping the clock, comes from the lengthOfDay helper on the constructor, which takes the same input forms and returns the rotation in seconds, the same span in hours, and the date's distance from the present in years:</p>
 <pre><code>propertime.lengthOfDay('20260614000101AM').seconds</code>
 <samp></samp></pre>
-<p>Other codes:</p>
+<p>The same reading taken at a deep date returns the shorter rotation that held then, a date some hundred and twenty thousand years back still sitting near the present length while a date in the billions falls away toward the young Earth:</p>
 
 <pre><code>propertime.lengthOfDay('1220260614000101AMA.C.').seconds</code>
 <samp></samp></pre>
 <pre><code>propertime.lengthOfDay('42344420260614000101AMA.C.').seconds</code>
 <samp></samp></pre>
 
-Normal mode absolute check:
+</dd>
+
+<dt>How do I read a drag time against the civil one, and what does DPK convert?</dt>
+<dd><p>Drag is the clock the day would keep if it followed the true spin of the Earth rather than the padded civil count, the reading the time could be were the day measured by the rotation itself, so a drag reading and a civil reading of the same written fields are two different moments, and the question that arises in use is what a civil stamp corresponds to on the real-rotation clock, or what a drag stamp corresponds to back on the civil one. The DPK method answers both, and its alias DTP is the same call. It reads the object's own drag flag for the direction, a reading made in drag returns its civil twin and a reading made in the civil mode returns its drag twin, so the flag the timestamp was opened with is the flag that decides which way the conversion runs.</p>
+<p>Two readings of the same written time look the same and are not the same moment, which is the first thing to hold. Taking a deep date as a plain string and rendering it once in the civil mode and once in drag gives the very same label, because nothing has been converted, only displayed:</p>
 <pre><code>propertime('344420260 0101 110101PMA.C.', '', '', false, false).toString()</code>
-  <samp></samp></pre>
-  Drag mode absolute check:
+<samp></samp></pre>
 <pre><code>propertime('344420260 0101 110101PMA.C.', '', '', false, true).toString()</code>
-  <samp></samp></pre>
-  Getting drag time from normal time, relative check:
+<samp></samp></pre>
+<p>The conversion is where the difference shows. Reading the civil stamp and asking for its drag twin moves both the clock and the date, because the two reckonings are set equal only at the present and drift apart with every day that separates a date from it, the real day being shorter than the civil 86,400 even now and shorter still in deep time, so the shortfall gathers day on day and a date hundreds of millions of years back lands its drag twin millions of years further out:</p>
 <pre><code>propertime('344420260 0101 110101PMA.C.', '', '', false, false).DPK(1).toString()</code>
-  <samp></samp></pre>
-  
-  Getting normal time from drag time, relative check:
-<pre><code>propertime('344420260 0101 101214PMA.C.', '', '', false, true).DPK(1).toString()</code>
-  <samp></samp></pre>
+<samp></samp></pre>
+<p>and feeding that drag twin back, read in drag this time, returns the civil stamp it came from, the conversion holding exact in both directions:</p>
+<pre><code>propertime('358698289 0317 101017PMA.C.', '', '', false, true).DPK(1).toString()</code>
+<samp></samp></pre>
+<p>A deep date prints as the canonical line of laps and holes, which is hard to read across a conversion, so the second argument to toString forces the civil layout instead and the twin reads as a plain year, month, day, and clock:</p>
+<pre><code>propertime('344420260 0101 110101PMA.C.', '', '', false, false).DPK(1).toString(false,true)</code>
+<samp></samp></pre>
+<pre><code>propertime('358698289 0317 101017PMA.C.', '', '', false, true).DPK(1).toString(false,true)</code>
+<samp></samp></pre>
+<p>The drift is not a deep-time curiosity, it is already a day or so within living memory, because the present rotation runs 236 seconds short of the civil day and that shortfall accumulates from the moment the two clocks were set level. A current civil stamp asked for its drag twin lands on the following day, and the same stamp read in drag and asked for its civil twin lands on the day before:</p>
+<pre><code>propertime('20260614100101PM', '', '', false, false).DPK(1).toString()</code>
+<samp></samp></pre>
+<pre><code>propertime('20260614100101PM', '', '', false, true).DPK(1).toString()</code>
+<samp></samp></pre>
+<p>The use of the method is exactly this crossing, holding a civil timestamp and learning where it falls on the clock the Earth actually turns by, or holding a real-rotation reading and bringing it back to the civil date a record would carry, with the present as the one moment the two agree and every other date parted from it by the gathered difference of all the days between.</p>
 </dd>
 
 <dt>Which length-of-day anchors does drag stand on, and where does it stop?</dt>

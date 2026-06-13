@@ -2120,6 +2120,47 @@ const propertime = (function () {
 		if (jb > DRAG_SUN_ENGULF_JDN) throw new Error("Invalid date.");
 	}
 
+	function dragLodIntegral(Y) {
+		if (Y === 0) return 0;
+		const A = DRAG_LOD_ANCHORS;
+		let lo = Math.min(0, Y), hi = Math.max(0, Y);
+		let pts = [lo];
+		for (let i = 0; i < A.length; i++) {
+			if (A[i][0] > lo && A[i][0] < hi) pts.push(A[i][0]);
+		}
+		pts.push(hi);
+		let area = 0;
+		for (let i = 0; i < pts.length - 1; i++) {
+			let a = pts[i], b = pts[i + 1];
+			area += (dragLodHours(a) + dragLodHours(b)) / 2 * (b - a);
+		}
+		return (Y < 0 ? -1 : 1) * area;
+	}
+
+	function dragLodIntegralInverse(target) {
+		if (target === 0) return 0;
+		const A = DRAG_LOD_ANCHORS;
+		let sign = target < 0 ? -1 : 1, rem = Math.abs(target);
+		let bps = [0];
+		if (sign > 0) { for (let i = 0; i < A.length; i++) if (A[i][0] > 0) bps.push(A[i][0]); bps.push(Infinity); }
+		else { for (let i = A.length - 1; i >= 0; i--) if (A[i][0] < 0) bps.push(A[i][0]); bps.push(-Infinity); }
+		for (let i = 0; i < bps.length - 1; i++) {
+			let a = bps[i], b = bps[i + 1];
+			let hA = dragLodHours(a);
+			if (!isFinite(b)) return a + sign * (rem / hA);
+			let hB = dragLodHours(b);
+			let width = Math.abs(b - a);
+			let segArea = (hA + hB) / 2 * width;
+			if (rem <= segArea) {
+				let m = (hB - hA) / width;
+				let t = Math.abs(m) < 1e-15 ? rem / hA : (-hA + Math.sqrt(hA * hA + 2 * m * rem)) / m;
+				return a + sign * t;
+			}
+			rem -= segArea;
+		}
+		return bps[bps.length - 1];
+	}
+
 	function _addStep(d, n, unit) {
 		let yStr = d.year;
 		let isMassive = yStr.length > 14;
@@ -2317,11 +2358,15 @@ const propertime = (function () {
 				tempSec = h * 3600 + (min - 1) * 60 + (sec - 1);
 			}
 			let frac = tempSec / srcLen;
-			let tgtLen = srcDrag ? 86400 : dragDayLenSeconds(jdn);
+			let Ysrc = (UNIVERSAL_ANCHOR - jdn) / DRAG_DAYS_PER_YEAR;
+			let Ytgt = srcDrag ? dragLodIntegral(Ysrc) / 24 : dragLodIntegralInverse(24 * Ysrc);
+			let tgtJdn = Math.round(UNIVERSAL_ANCHOR - Ytgt * DRAG_DAYS_PER_YEAR);
+			let tgtDate = jdnToYmd(tgtJdn);
+			let tgtLen = srcDrag ? 86400 : dragDayLenSeconds(tgtJdn);
 			let tgtSec = Math.round(frac * tgtLen);
 			if (tgtSec >= tgtLen) tgtSec = tgtLen - 1;
 			let target = new ProperTime({
-				year: this.year, month: this.month, day: this.day,
+				year: tgtDate.y.toString(), month: pad(tgtDate.m), day: pad(tgtDate.d),
 				hr: "00", min: "01", sec: "01", ampm: "AM",
 				tag: this.tag, verbose: this.verbose, drag: !srcDrag
 			});
