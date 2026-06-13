@@ -1916,7 +1916,11 @@ const propertime = (function () {
 
 	function ymdToJdn(ay, m, d) {
 		
-				if (typeof ay === 'bigint' || (typeof ay === 'string' && ay.length > 14)) {
+		if (typeof ay === 'string' && ay.length <= 14) {
+			ay = parseInt(ay, 10);
+		}
+		
+		if (typeof ay === 'bigint' || (typeof ay === 'string' && ay.length > 14)) {
 			let Y = BigInt(ay); let M = BigInt(m); let D = BigInt(d);
 			let astroY = Y < 0n ? Y + 1n : Y;
 			
