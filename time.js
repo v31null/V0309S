@@ -2502,7 +2502,7 @@ getMeta(is_he = false) {
 				let alts = this.toAltFormats(is_he, force_roman);
 				return alts[0];
 			}
-			return `${meta.displayYear} ${this.month}${FS}${this.day} ${this.hr}:${this.min}:${this.sec} ${this.ampm}${meta.suffix}`;
+			return `${meta.displayYear} ${this.month}${FS}${this.day} ${this.hr}:${this.min}:${this.sec} ${this.ampm}${meta.suffix}`;
 		}
 
 		toAltFormats(is_he = false, force_roman = false) {
