@@ -2270,20 +2270,7 @@ const propertime = (function () {
 
 			let tempSec = totalSec - 1;
 
-			function getDayLen(j) {
-				if (d.drag) { dragAssertInBounds(j); return dragDayLenSeconds(j); }
-				let len = 86400;
-				if (typeof j === 'bigint') {
-					if (j % 11n === 0n) len += 1;
-					return len;
-				}
-
-				let dp = jdnToYmd(j);
-				if (dp.m === 1 && dp.d === 1 &&[1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1988, 1990, 1991, 1996, 1999, 2006, 2009, 2017].includes(dp.y)) len += 1;
-				else if (dp.m === 7 && dp.d === 1 &&[1972, 1981, 1982, 1983, 1985, 1992, 1993, 1994, 1997, 2012, 2015].includes(dp.y)) len += 1;
-
-				return len;
-			}
+			const getDayLen = (j) => dayLenSeconds(j, d.drag);
 			while (tempSec >= getDayLen(jdn)) {
 				tempSec -= getDayLen(jdn);
 				jdn++;
@@ -2334,10 +2321,18 @@ const propertime = (function () {
 
 		add(n, unit) {
 			let newPt = new ProperTime(_addStep(this, n, unit));
-			newPt.tag = this.tag;
+			newPt.tag = n === 0 ? this.tag : resolveStyleTag(newPt, this.tag);
 			newPt.verbose = this.verbose;
 			newPt.drag = this.drag;
 			return newPt;
+		}
+
+		toStorage() {
+			return fieldsToWire(this);
+		}
+
+		toSortKey() {
+			return fieldsToSortKey(this);
 		}
 
 		DTP() {
@@ -2393,10 +2388,7 @@ getMeta(is_he = false) {
 					pyNum += 1;
 					if (pyNum === 0) pyNum = -1;
 				}
-				
-				if (this.tag === "N.S." && ayNum === 1155 && (m === 1 || m === 2 || (m === 3 && day < 25))) {
-					pyNum = 1154;
-				}
+
 			}
 			
 			let isBeforeBirth = false;
@@ -2910,15 +2902,34 @@ getMeta(is_he = false) {
 			let isIP = inputTag.includes("I.P.");
 			let isBC = isAC || isIP || s.startsWith("-");
 			if (s.startsWith("-")) s = s.substring(1);
+
 			if (s.length < 11) throw new Error("Invalid propertime string");
 
-			let is3DigitSec = /1157\d{3}PM$/i.test(s);
-			let secLen = is3DigitSec ? 3 : 2;
-			let ampm = s.slice(-2).toUpperCase();
-			let sec = parseInt(s.slice(-2 - secLen, -2));
-			let min = parseInt(s.slice(-4 - secLen, -2 - secLen));
-			let hr = parseInt(s.slice(-6 - secLen, -4 - secLen));
-			let dateStr = s.slice(0, -6 - secLen);
+			let merMatch = s.match(/[AP]M?/i);
+			if (!merMatch) throw new Error(`Invalid date.`);
+			let ampm = merMatch[0].toUpperCase();
+			if (ampm.length === 1) ampm += "M";
+			let beforeMer = s.slice(0, merMatch.index);
+			let afterMer = s.slice(merMatch.index + merMatch[0].length);
+
+			let timeStr, dateStr;
+			if (afterMer.length >= 6) {
+				dateStr = beforeMer;
+				timeStr = afterMer;
+			} else {
+				let timeLen = beforeMer.length - 8;
+				if (timeLen !== 6 && timeLen !== 7) timeLen = /1157\d{3}$/.test(beforeMer) ? 7 : 6;
+				dateStr = beforeMer.slice(0, beforeMer.length - timeLen);
+				timeStr = beforeMer.slice(beforeMer.length - timeLen);
+			}
+
+			let hr = parseInt(timeStr.slice(0, 2));
+			let min = parseInt(timeStr.slice(2, 4));
+			let sec = parseInt(timeStr.slice(4));
+
+			if (timeStr.length > 7) throw new Error(`Invalid date.`);
+			if (timeStr.length === 7 && merMatch[0].length === 2 && !(hr === 11 && min === 57 && ampm === "PM")) throw new Error(`Invalid date.`);
+			if (timeStr.length === 7 && merMatch[0].length === 2 && afterMer.length >= 6) throw new Error(`Invalid date.`);
 
 			const day = parseInt(dateStr.slice(-2));
 			const month = parseInt(dateStr.slice(-4, -2));
@@ -2979,6 +2990,8 @@ getMeta(is_he = false) {
 				targetDay = 25;
 			}
 			
+			if (!isMassive && resolvedTag === "N.S." && ay === 1155 && (targetMonth < 3 || (targetMonth === 3 && targetDay < 25))) resolvedTag = "O.S.";
+
 			let jdnCheck = ymdToJdn(ay, targetMonth, targetDay);
 			let rt = jdnToYmd(jdnCheck);
 			if (rt.y.toString() !== ay.toString() || rt.m !== targetMonth || rt.d !== targetDay) {
@@ -3251,6 +3264,101 @@ getMeta(is_he = false) {
 		dragAssertInBounds(j);
 		let seconds = dragDayLenSeconds(j);
 		return { seconds, hours: seconds / 3600, yearsBP: dragYearsBP(j) };
+	};
+
+	function fieldsToWire(p) {
+		let time = p.hr + p.min + p.sec;
+		let mer = String(time).length >= 7 ? p.ampm[0] : p.ampm;
+		return civilYear(p) + p.month + p.day + mer + time + styleTag(p);
+	}
+	ptFunc.toStorage = fieldsToWire;
+
+	function fieldsToSortKey(p) {
+		return civilYear(p) + p.month + p.day + p.ampm[0] + p.hr + p.min + String(p.sec).padStart(3, "0") + styleTag(p);
+	}
+	ptFunc.toSortKey = fieldsToSortKey;
+
+	function resolveStyleTag(p, prevTag) {
+		if (p.drag || p.year.length > 14) return prevTag;
+		let ay = parseInt(p.year);
+		if (ay < 1) return prevTag;
+		if (prevTag !== "O.S." && prevTag !== "N.S." && (ay < 1145 || ay > 1760)) return prevTag;
+		let m = parseInt(p.month), d = parseInt(p.day);
+		if (ay === 1752) return (m < 9 || (m === 9 && d <= 2)) ? "O.S." : "N.S.";
+		let beforeLadyDay = m < 3 || (m === 3 && d < 25);
+		let tries = [prevTag, "", "O.S.", "N.S."];
+		for (let i = 0; i < tries.length; i++) {
+			let t = tries[i];
+			if (t !== "" && t !== "O.S." && t !== "N.S.") continue;
+			let py = (t !== "N.S." && beforeLadyDay && ay >= 1155 && ay <= 1751) ? ay - 1 : ay;
+			let back;
+			try { back = ptFunc(py + p.month + p.day + "AM000101" + (t ? " " + t : "")); } catch (e) { continue; }
+			if (back.year === p.year && back.month === p.month && back.day === p.day) return back.tag;
+		}
+		return prevTag;
+	}
+
+	function civilYear(p) {
+		let y = p.year;
+		if (p.tag !== "O.S." || y.length > 14) return y;
+		let ay = parseInt(y), m = parseInt(p.month), d = parseInt(p.day);
+		return (ay >= 1155 && ay <= 1751 && (m < 3 || (m === 3 && d < 25))) ? String(ay - 1) : y;
+	}
+
+	function styleTag(p) {
+		return p.tag === "O.S." || p.tag === "N.S." ? " " + p.tag : "";
+	}
+
+	function dayLenSeconds(j, isDrag) {
+		if (isDrag) { dragAssertInBounds(j); return dragDayLenSeconds(j); }
+		let len = 86400;
+		if (typeof j === 'bigint') {
+			if (j % 11n === 0n) len += 1;
+			return len;
+		}
+		let dp = jdnToYmd(j);
+		if (dp.m === 1 && dp.d === 1 && [1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1988, 1990, 1991, 1996, 1999, 2006, 2009, 2017].includes(dp.y)) len += 1;
+		else if (dp.m === 7 && dp.d === 1 && [1972, 1981, 1982, 1983, 1985, 1992, 1993, 1994, 1997, 2012, 2015].includes(dp.y)) len += 1;
+		return len;
+	}
+
+	ptFunc.diff = function (a, b, units) {
+		const parse = function (x) { return (x && typeof x === 'object' && 'year' in x && 'month' in x) ? x : ptFunc(x); };
+		const cmpKey = function (pt) {
+			let jdn = ymdToJdn(pt.year, parseInt(pt.month), parseInt(pt.day));
+			jdn = typeof jdn === 'bigint' ? Number(jdn) : jdn;
+			let h = parseInt(pt.hr);
+			if (pt.ampm === "PM" && h !== 12) h += 12;
+			if (pt.ampm === "AM" && h === 12) h = 0;
+			return jdn * 100000 + h * 3600 + (parseInt(pt.min) - 1) * 60 + (parseInt(pt.sec) - 1);
+		};
+		let ptA = parse(a), ptB = parse(b);
+		let negative = cmpKey(ptA) > cmpKey(ptB);
+		let lo = negative ? ptB : ptA, hi = negative ? ptA : ptB;
+		let pool = units || UNITS;
+		let measured = [];
+		for (let i = 0; i < pool.length; i++) {
+			let step = cmpKey(lo.add(1, pool[i])) - cmpKey(lo);
+			if (step > 0) measured.push([pool[i], step, i]);
+		}
+		measured.sort(function (x, y) { return y[1] - x[1] || x[2] - y[2]; });
+		let bracket = [], lastStep = null;
+		for (let k = 0; k < measured.length; k++) {
+			if (measured[k][1] === lastStep) continue;
+			bracket.push(measured[k][0]);
+			lastStep = measured[k][1];
+		}
+		let hiKey = cmpKey(hi);
+		let cursor = lo;
+		let parts = [];
+		for (let i = 0; i < bracket.length; i++) {
+			let u = bracket[i], count = 0;
+			while (cmpKey(cursor.add(1, u)) <= hiKey) { cursor = cursor.add(1, u); count++; }
+			if (count > 0) parts.push(count + " " + u);
+		}
+		if (!parts.length) parts.push("0 SEC");
+		let s = parts.join(" ");
+		return s;
 	};
 
 	return ptFunc;
