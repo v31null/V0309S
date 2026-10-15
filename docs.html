@@ -78,7 +78,7 @@ code{
 <p>The facts that matter most are these:</p>
 
 <ul>
-<li>The calendar is the English civil calendar and the regnal output follows the English crown, not any other line. The change of style is the English one of September 1752, where eleven days are wiped, not the Catholic one of 1582. From 1155 to 1751 the year begins on Lady Day, March 25, and the year 1154 is 448 days long. The regnal format names the reigning monarch, CHARLES III for 2026.</li>
+<li>The calendar is the English civil calendar and the regnal output follows the English crown, not any other line. The change of style is the English one of September 1752, where eleven days are wiped, not the Catholic one of 1582. From 1155 to 1751 the year begins on Lady Day, March 25, and the year 1154 is 448 days long, so its January 1 to March 24 happen twice. The first run is tagged <code>N.S.</code>, the second run <code>O.S.</code>, the way a repeated hour at the end of daylight saving is told apart by its zone. Before 1155 the year begins on January 1, which is a simplification, as English records of the time mostly counted the year from Christmas. The regnal format names the reigning monarch, CHARLES III for 2026.</li>
 <li>Minutes and seconds run from 01 to 60, never 00. Hours begin at 00, and there is no 12 AM or 12 PM. The day begins at 00:01:01 AM. Standard 11:59:59 AM is written 11:60:60 AM, and the second after it, standard noon, is 00:01:01 PM.</li>
 <li>A day is 86,164 seconds, not 86,400. The difference is absorbed at the end of the day, where the last minute runs to 240 seconds, to 241 on the leap-second days of the built-in 11-day cycle, which are the days whose Julian Day Number divides by 11 without remainder, and longer again when an official leap second is added. The second after the last one is 00:01:01 AM of the next day.</li>
 <li>The baseline is Japan Standard Time, kept at the Akashi Municipal Planetarium. GMT is treated as 9 hours behind this baseline, and there is no automatic daylight saving.</li>
@@ -136,16 +136,31 @@ code{
 <section id="inputs">
 <h2>Input formats</h2>
 <p>A timestamp string has this layout:</p>
-<pre><code>[Year][Month][Day][Hour][Min][Sec][AM or PM][Optional Suffix]</code></pre>
+<pre><code>[Year][Month][Day][A or P][Hour][Min][3-digit Sec][Optional Suffix]
+[Year][Month][Day][AM or PM][Hour][Min][Sec][Optional Suffix]
+[Year][Month][Day][Hour][Min][Sec][AM or PM][Optional Suffix]</code></pre>
+<p>The first line is the sort key that <code>toSortKey</code> writes, the second is the stamp that <code>toStorage</code> writes, and the third is the original form, which is still read.</p>
 <ul>
 <li>Month, day, hour, and minute are exactly 2 digits each.</li>
-<li>Second is 2 digits, or 3 digits during the daily leap minute.</li>
-<li>Year is any length. The fixed-width fields are read off the right end and whatever remains on the left is the year, which is why they must be exactly 2 digits.</li>
-<li><code>AM</code> or <code>PM</code> is required. There is no 24-hour input.</li>
+<li>With a one-letter meridiem the second is always 3 digits, zero-padded, so 33 is written <code>033</code>.</li>
+<li>With a two-letter meridiem the second is 2 digits. In the original form it is 3 digits during the daily leap minute. A two-letter meridiem in front of a 3-digit second is rejected, that combination belongs to neither form.</li>
+<li>Year is any length. The meridiem splits the string, the date sits on its left and its last four digits are the month and the day, whatever remains is the year.</li>
+<li>The meridiem is required. There is no 24-hour input.</li>
 <li>The suffix may be <code>A.C.</code>, <code>I.P.</code>, <code>O.S.</code>, or <code>N.S.</code>. <code>A.C.</code> takes precedence if combined with the others. On overlap years such as 1154/1155 and 1752, <code>O.S.</code> or <code>N.S.</code> is mandatory.</li>
+<li>Inside the repeated span of 1154, <code>1155 01/01 N.S.</code> and <code>1154 01/01 O.S.</code> name the same day, the second January 1 of 1154. Both are read, and the result is always the second form.</li>
 </ul>
-<pre><code>propertime('20260612000101AM')
+<pre><code>propertime('20260612A0001001')
+propertime('20260612AM000101')
+propertime('20260612000101AM')
 propertime('450101000101AM A.C.')</code></pre>
+<p>The first three calls name the same instant:</p>
+<pre><code>[propertime('20260612A0001001'), propertime('20260612AM000101'), propertime('20260612000101AM')].map(t => t.toString()).join(' = ')</code>
+<samp></samp></pre>
+<p>A two-letter meridiem with a 3-digit second throws:</p>
+<pre><code>let msg = 'parsed fine'
+try { propertime('20260612PM1040033') } catch (e) { msg = e.message }
+msg</code>
+<samp></samp></pre>
 <p>The input may also be an object. With a <code>STRING</code> field it is unwrapped and parsed as above. With unit fields a timestamp is built from them. The fields for a normal date are <code>YRS</code>, <code>MON</code>, <code>DAYS</code>, <code>HRS</code>, <code>MIN</code>, <code>SEC</code>, and the <code>HRS</code> value carries the meridiem, for example <code>'00AM'</code>. Deep-time dates may instead use <code>LAP</code> and <code>HOL</code> for Stonehenge, the lap and the hole of the unit table under <code>add</code>, or <code>SEA</code> and <code>DEC</code> for Egyptian, where <code>SEA</code> picks the season, 1 for AKHET, 5 for PERET, 9 for SHEMU, and 4 for the five epagomenal days, <code>MON</code> counts the month inside the season, and <code>DEC</code> is the ten-day decan inside the month. The parser also reads back the canonical deep-time display lines themselves, as the <a href="#advice">round-trip answer</a> shows. Both calls below equal the first string form above:</p>
 <pre><code>propertime({ YRS: 2026, MON: 6, DAYS: 12, HRS: '00AM', MIN: 1, SEC: 1 })
 propertime({ STRING: '20260612000101AM' })</code></pre>
@@ -186,7 +201,11 @@ propertime({ STRING: '20260612000101AM' })</code></pre>
 <h2>Methods</h2>
 
 <h3><code>add(n, unit)</code></h3>
-<p>Returns a new time value moved by <code>n</code> units. The original value is not changed. Subtraction is the same method with a minus sign on <code>n</code>, there is no separate subtract. The move respects the leap minute and the calendar gaps, so one second before <code>00:01:01 AM</code> is the previous day at <code>11:57:240 PM</code>, or at <code>11:57:241 PM</code> when that day carries a leap second.</p>
+<p>Returns a new time value moved by <code>n</code> units. The original value is not changed. Subtraction is the same method with a minus sign on <code>n</code>, there is no separate subtract. The move respects the leap minute and the calendar gaps, so one second before <code>00:01:01 AM</code> is the previous day at <code>11:57:240 PM</code>, or at <code>11:57:241 PM</code> when that day carries a leap second. The style tag is not copied blindly, after every move the parser is asked which tag the new date takes, so a move across September 1752 comes back <code>N.S.</code> and a move out of the 1154 overlap into the Lady Day years comes back <code>O.S.</code>.</p>
+<pre><code>propertime('17520902000101AM O.S.').add(200, 'DAYS').toString()</code>
+<samp></samp></pre>
+<pre><code>propertime('11541231000101AM N.S.').add(1, 'DAYS').toString()</code>
+<samp></samp></pre>
 <table>
 <thead><tr><th>Unit</th><th>Step</th></tr></thead>
 <tbody>
@@ -217,6 +236,16 @@ propertime({ STRING: '20260612000101AM' })</code></pre>
 
 <h3><code>toAltFormats(is_he, force_roman)</code></h3>
 <p>Returns an array of exactly 20 strings, each a different rendering of the same instant, indexed as listed in <a href="#altformats">the format table</a>. The flags mean the same as on <code>toString</code>.</p>
+
+<h3><code>toSortKey()</code></h3>
+<p>Returns the database form of the instant: year, month, day, a one-letter meridiem, hour, minute, and the second padded to 3 digits. Every field holds the same position in every key, so alphabetical order is chronological order. A modern key is always 16 characters. On the years that carry <code>O.S.</code> or <code>N.S.</code> the tag is appended after a space, so the key parses back. This is the form to store, index, and sort on, see the <a href="#database">database chapter</a>.</p>
+<pre><code>propertime('20261014PM104033').toSortKey()</code>
+<samp></samp></pre>
+
+<h3><code>toStorage()</code></h3>
+<p>Returns the stamp form: year, month, day, <code>AM</code> or <code>PM</code>, then the time with a 2-digit second. From the 100th second of the leap minute the meridiem shrinks to one letter so that the 3-digit second fits into the same 16 characters. It parses back, it is fine for URLs, logs, and JSON, but it is not the database form, because that shrinking meridiem moves the fields and breaks string order, as <a href="#ordering">the ordering answer</a> shows.</p>
+<pre><code>propertime('20261014PM104033').toStorage() + ' ' + propertime('20261014P1157214').toStorage()</code>
+<samp></samp></pre>
 </section>
 
 <section id="helpers">
@@ -239,6 +268,16 @@ propertime({ STRING: '20260612000101AM' })</code></pre>
 
 <h3><code>propertime.jdnDiff(cy1, m1, d1, cy2, m2, d2)</code></h3>
 <p>Returns the number of days from the first civil date to the second.</p>
+
+<h3><code>propertime.diff(a, b, units)</code></h3>
+<p>Returns the distance between two instants as a string of units, largest first, for example <code>1 DAYS 22 HRS 38 MIN 12 SEC</code>. <code>a</code> and <code>b</code> are time values or anything the parser reads. <code>units</code> is an optional list of unit names from the table under <code>add</code> and limits the breakdown to them. The result intentionally carries no sign, swapping the two arguments returns the same string, so a caller who needs the direction compares the two keys.</p>
+<pre><code>propertime.diff('20261013A0002021', '20261014P1040033')</code>
+<samp></samp></pre>
+<pre><code>propertime.diff('20260101A0001001', '20270315P0501001', ['DAYS', 'HRS'])</code>
+<samp></samp></pre>
+
+<h3><code>propertime.toSortKey(value)</code> and <code>propertime.toStorage(value)</code></h3>
+<p>The same as the methods of the same name, called on any object that carries the fields <code>year</code>, <code>month</code>, <code>day</code>, <code>hr</code>, <code>min</code>, <code>sec</code>, <code>ampm</code>, and optionally <code>tag</code>.</p>
 </section>
 
 <section id="altformats">
@@ -404,16 +443,16 @@ noon.hr + ' ' + noon.ampm</code>
 <samp></samp></pre>
 
 <h3>How do I send a value over JSON or store it in a row?</h3>
-<p>Concatenate the fields back into the wire format the parser reads. The fields are already zero-padded, so the round trip is exact. Append the tag when it is not empty, the overlap years need it.</p>
+<p>Call <code>toSortKey</code>. The parser reads the key back, so the round trip is exact, and the tag of the overlap years rides along.</p>
 <pre><code>const t = propertime('20260612093101AM')
-const wire = t.year + t.month + t.day + t.hr + t.min + t.sec + t.ampm
-propertime(wire).toString() === t.toString()</code>
+const key = t.toSortKey()
+propertime(key).toString() === t.toString()</code>
 <samp></samp></pre>
 <p>Do not store the output of <code>toString</code> instead, it is a display form, the parser does not read it back, and the <a href="#advice">round-trip answer</a> later in this manual shows the mangling.</p>
 
 <h3>How do I index dates in a database?</h3>
-<p>For modern data the wire stamp itself sorts correctly, because the format runs big to small, year then month then day, so alphabetical order is chronological order while the years keep the same width:</p>
-<pre><code>['20261105', '20260612', '20250101'].sort().join(' ')</code>
+<p>Index the sort key. It runs big to small, year, month, day, meridiem, hour, minute, second, every field at a fixed position, so alphabetical order is chronological order while the years keep the same width:</p>
+<pre><code>['20261105A0001001', '20260612P0931001', '20260612A0931001', '20250101A0001001'].sort().join(' ')</code>
 <samp></samp></pre>
 <p>The caveat is the width of the year, which is not padded, so once the data crosses into years of another length, three digits, five digits, or the A.C. side, string order breaks. For data that leaves the modern window, store the Julian Day Number as an integer key, it is what the library itself uses as common ground between the calendars:</p>
 <pre><code>propertime.toJDN(2026, 6, 12)</code>
@@ -459,29 +498,33 @@ msg</code>
 <p>The SQL in this chapter is fixed text, since a browser does not run SQL, and each statement is therefore paired with its JavaScript equivalent. The equivalence holds because a stamp is plain ASCII, and the byte order an engine uses to compare TEXT agrees with the code-unit order JavaScript uses to compare strings.</p>
 
 <h3>How do I store it, and would anything break?</h3>
-<p>Store the raw wire stamp in a plain text column and nothing breaks, because to the engine the stamp is an opaque string, stored, compared, and returned byte for byte, while all parsing and arithmetic stay in your code. The library is one file and runs in any JavaScript host, so a backend in another language, for example PHP, can hand stamps to it through a Node process or an embedded JavaScript engine, and the rows themselves never need the library at all. Validation happens in code before the INSERT, as the cases chapter does for the 00 second, because a CHECK constraint cannot carry the notation's rules, the 01 floors and the 240 ceiling that rises to 241 on the cycle days.</p>
+<p>Store the sort key from <code>toSortKey</code> in a plain text column and nothing breaks, because to the engine the stamp is an opaque string, stored, compared, and returned byte for byte, while all parsing and arithmetic stay in your code. The library is one file and runs in any JavaScript host, so a backend in another language, for example PHP, can hand stamps to it through a Node process or an embedded JavaScript engine, and the rows themselves never need the library at all. Validation happens in code before the INSERT, as the cases chapter does for the 00 second, because a CHECK constraint cannot carry the notation's rules, the 01 floors and the 240 ceiling that rises to 241 on the cycle days.</p>
 <pre><code>CREATE TABLE events (
   id      INTEGER PRIMARY KEY,
   title   TEXT NOT NULL,
-  stamp   VARCHAR(20) NOT NULL,
-  jdn     INTEGER NOT NULL,
-  timekey TEXT NOT NULL
+  stamp   VARCHAR(24) NOT NULL,
+  jdn     INTEGER NOT NULL
 )</code></pre>
-<p>The <code>jdn</code> and <code>timekey</code> columns are derived keys explained under the ordering question below, written once at INSERT from the same value the stamp came from. The six rows below serve the examples of this chapter:</p>
-<pre><code>INSERT INTO events (title, stamp, jdn, timekey) VALUES
-  ('spring deadline',   '20260530101010AM',      2461191, 'AM1010010'),
-  ('leap minute end',   '202606031157241PM',     2461195, 'PM1157241'),
-  ('morning meeting',   '20260612093101AM',      2461204, 'AM0931001'),
-  ('afternoon meeting', '20260612003101PM',      2461204, 'PM0031001'),
-  ('july start',        '20260701000101AM',      2461223, 'AM0001001'),
-  ('styled history',    '17520902000101AM O.S.', 2361221, 'AM0001001')</code></pre>
-<p>Though it is apt to say that <code>stamp</code> is enough by itself for modern times.</p>
-<h3>Is VARCHAR(20) wide enough?</h3>
-<p>For the modern window yes. A modern stamp runs 16 characters, the leap minute adds one for its 3-digit second, and a five-digit year would add one more, so 20 holds everything the present era writes. The mandatory style tags of the overlap years push a stamp to 21 and 22 characters, and A.C. years grow with their digits without a bound, so historical data either sizes the column for its era or leans on the JDN key from the cases chapter. Engines also differ on enforcement. SQLite records a declared width and never enforces it, so a 21-character stamp enters a VARCHAR(20) column unchanged, while stricter engines truncate or refuse, and the declared width therefore matters on every engine except SQLite. A modern stamp, a leap-minute stamp, and the tagged stamp of 1752 have these lengths:</p>
-<pre><code>const wire = t => t.year + t.month + t.day + t.hr + t.min + t.sec + t.ampm + (t.tag ? ' ' + t.tag : '')
-const a = wire(propertime('20260612093101AM'))
-const b = wire(propertime('20260612000101AM').add(-1, 'SEC'))
-const c = wire(propertime('17520902000101AM O.S.'))
+<p>The <code>jdn</code> column carries <code>propertime.toJDN</code> of the date, written once at INSERT from the same value the key came from, and it is only needed for data outside the four-digit years, as the ordering question below explains. The six rows below serve the examples of this chapter:</p>
+<pre><code>INSERT INTO events (title, stamp, jdn) VALUES
+  ('spring deadline',   '20260530A1010010',      2461191),
+  ('leap minute end',   '20260603P1157241',      2461195),
+  ('morning meeting',   '20260612A0931001',      2461204),
+  ('afternoon meeting', '20260612P0031001',      2461204),
+  ('july start',        '20260701A0001001',      2461223),
+  ('styled history',    '17520902A0001001 O.S.', 2361221)</code></pre>
+<p>For the years 1000 to 9999 <code>stamp</code> is enough by itself, <code>jdn</code> is there for the rest.</p>
+<h3>I already stored <code>toStorage</code> stamps, how do I move them?</h3>
+<p>The parser reads both forms, so every old row converts with one call, and the result names the same instant:</p>
+<pre><code>['20261013AM000221', '20261014PM115458', '20261014P1157214'].map(s => propertime(s).toSortKey()).join(' ')</code>
+<samp></samp></pre>
+<pre><code>UPDATE events SET stamp = ? WHERE id = ?</code></pre>
+<p>Run it once per row, with the converted key from your own code, since the conversion needs the library and the engine does not have it. Do not leave both forms in one column. At the character after the date a key holds a digit where a stamp holds the <code>M</code> of <code>PM</code>, so every key of a day sorts ahead of every <code>PM</code> stamp of that day.</p>
+<h3>Is VARCHAR(24) wide enough?</h3>
+<p>For the modern window yes. A modern key is always 16 characters, the leap minute included, because its second is always 3 digits, and a five-digit year adds one more. The style tag of the overlap years adds 5 characters, a space and the tag, which puts a 1752 key at 21, and A.C. years grow with their digits without a bound, so historical data either sizes the column for its era or leans on the JDN key from the cases chapter. Engines also differ on enforcement. SQLite records a declared width and never enforces it, so a longer key enters a VARCHAR(24) column unchanged, while stricter engines such as MySQL in strict mode refuse it and others truncate, and the declared width therefore matters on every engine except SQLite. A modern key, a leap-minute key, and the tagged key of 1752 have these lengths:</p>
+<pre><code>const a = propertime('20260612093101AM').toSortKey()
+const b = propertime('20260612000101AM').add(-1, 'SEC').toSortKey()
+const c = propertime('17520902000101AM O.S.').toSortKey()
 a.length + ', ' + b.length + ', ' + c.length</code>
 <samp></samp></pre>
 
@@ -491,25 +534,35 @@ a.length + ', ' + b.length + ', ' + c.length</code>
 <samp></samp></pre>
 <p>Nor can a faithful field-for-field conversion exist, because ISO 8601 rests on an 86,400-second day with hours 00 to 23 and minutes and seconds 00 to 59, while this notation has no hour 12, no 00 minute or second, and a last minute of 240 seconds and more. Where an external system demands ISO 8601, the translation belongs to your own layer, and it will not survive the leap minute intact.</p>
 
-<h3>Does ORDER BY put stamps in time order?</h3>
-<p>The order holds to the day and fails within the day. The date digits lead the string, so stamps of one year width sort chronologically by day, as the cases chapter showed. Inside one day the meridiem sits at the tail where it cannot influence the comparison, so an afternoon stamp whose hour digits are small sorts ahead of a morning stamp whose hour digits are large:</p>
+<h3 id="ordering">Does ORDER BY put stamps in time order?</h3>
+<p>Sort keys yes, for the years 1000 to 9999:</p>
+<pre><code>SELECT stamp FROM events ORDER BY stamp</code></pre>
+<p>The other two forms do not. The original form keeps the meridiem at the tail, where it cannot influence the comparison, so an afternoon stamp whose hour digits are small sorts ahead of a morning stamp whose hour digits are large:</p>
 <pre><code>['20260612003101PM', '20260612093101AM'].sort().join(' ')</code>
 <samp></samp></pre>
-<p>The remedy is the pair of derived key columns from the schema above. <code>jdn</code> carries <code>propertime.toJDN</code> of the date and orders the days across any year width, and <code>timekey</code> carries the meridiem first and then the time fields, with the second padded to 3 digits because the leap minute writes a 240 where ordinary minutes write at most a 60, and the strings only compare correctly at one width:</p>
-<pre><code>const key = t => t.ampm + t.hr + t.min + t.sec.padStart(3, '0')
-const morning = key(propertime('20260612093101AM'))
-const afternoon = key(propertime('20260612003101PM'))
-morning + ' ' + afternoon + ' ' + (morning &lt; afternoon)</code>
+<p>The <code>toStorage</code> form fixes that and breaks in the leap minute instead. Up to the 99th second it writes <code>PM</code> and 2 digits, from the 100th it writes <code>P</code> and 3 digits, so in the 100th second the time digits slide one place to the left. The strings agree up to the <code>P</code>, the next character is <code>M</code> in one and <code>1</code> in the other, and since <code>1</code> is code 49 and <code>M</code> is code 77, the last 142 seconds of the day sort in right behind the morning:</p>
+<pre><code>['20261014AM090101', '20261014PM000101', '20261014PM115799', '20261014P1157100', '20261014P1157214'].sort().join(' ')</code>
+<samp></samp></pre>
+<p>The sort key writes one letter and 3 digits at every second of the day, so no field ever moves:</p>
+<pre><code>['20261014AM090101', '20261014PM000101', '20261014PM115799', '20261014P1157100', '20261014P1157214'].map(s => propertime(s).toSortKey()).sort().join(' ')</code>
+<samp></samp></pre>
+<p>Outside the four-digit years the year is not padded, so a three-digit or five-digit year, or an A.C. year with its minus sign, compares at the wrong place. There order on <code>jdn</code> first, which puts the days back in order, and then on a <code>timekey</code> column holding the part of the key from the meridiem onward, which orders the time inside the day. Both are written once at INSERT:</p>
+<pre><code>const t = propertime('17520902000101AM O.S.')
+t.toSortKey().slice(t.year.length + 4)</code>
 <samp></samp></pre>
 <pre><code>SELECT stamp FROM events ORDER BY jdn, timekey</code></pre>
+<p>The Lady Day years, 1155 to 1751, break string order even with four digits. The key stores the date as the calendar names it, so January 1 to March 24 carry the civil year, which ended later than the January that bears its number, and a January key sorts at the front of its year though it falls at the back. The key still parses back to the same day, only the ordering needs <code>jdn</code>:</p>
+<pre><code>['17000325000101AM', '17000101000101AM'].map(s => propertime(s)).map(t => t.toSortKey() + ' jdn ' + propertime.toJDN(+t.year, +t.month, +t.day)).join(', ')</code>
+<samp></samp></pre>
+<p>The repeated span of 1154 sorts the same way, both January 1s land side by side, <code>N.S.</code> before <code>O.S.</code>, and <code>jdn</code> sets them apart. A key carries the tag after a space, so store it whole.</p>
 
 <h3>How do I query a date range?</h3>
-<p>A range of dates is selected with the date digits as string bounds. Every stamp of June 2026 begins with 202606, every stamp of an earlier month compares below that, and every stamp of a later month compares at or above 202607, whatever time of day the stamp carries. Against the rows above, a query would return the three stamps of June 2026, the leap-minute stamp of June 3 among them:</p>
+<p>A range of dates is selected with the date digits as string bounds. Every key of June 2026 begins with 202606, every stamp of an earlier month compares below that, and every stamp of a later month compares at or above 202607, whatever time of day the stamp carries. Against the rows above, a query would return the three stamps of June 2026, the leap-minute stamp of June 3 among them:</p>
 <pre><code>SELECT stamp FROM events
 WHERE stamp >= '202606' AND stamp &lt; '202607'
-ORDER BY jdn, timekey</code></pre>
+ORDER BY stamp</code></pre>
 <p>The comparison behaves identically on plain strings:</p>
-<pre><code>['20260530101010AM', '20260612093101AM', '20260701000101AM'].filter(s => s >= '202606' &amp;&amp; s &lt; '202607').join(' ')</code>
+<pre><code>['20260530A1010010', '20260612A0931001', '20260701A0001001'].filter(s => s >= '202606' &amp;&amp; s &lt; '202607').join(' ')</code>
 <samp></samp></pre>
 <p>The bound trick carries the same caveat as the sorting, it holds while the years keep one width, and data of mixed widths queries on the <code>jdn</code> column instead, WHERE jdn BETWEEN the two day numbers.</p>
 
@@ -568,17 +621,16 @@ WHERE a.title = 'morning meeting' AND b.title = 'july start'</code></pre>
 <p>The questions below are shortcuts that developers commonly ask for, and the answer to each of them is no, given each time with the reason and with the way that works instead.</p>
 
 <h3>Can I keep the database in whatever the user typed?</h3>
-<p>No. A stored local time leaves open the question of whose locality it was written in, and every later reader of the row inherits that open question. Keep one canonical wire stamp in the row, the proper time itself, and localize at the edge where the user meets it. In the example below the stored row stays the same while the reading of it changes with the offset.</p>
-<pre><code>const stored = propertime('20260612093101AM')
-const wire = stored.year + stored.month + stored.day + stored.hr + stored.min + stored.sec + stored.ampm
-wire + ' stays in the row, a London reader sees ' + propertime(wire, 'M9').toString()</code>
+<p>No. A stored local time leaves open the question of whose locality it was written in, and every later reader of the row inherits that open question. Keep one canonical sort key in the row, the proper time itself, and localize at the edge where the user meets it. In the example below the stored row stays the same while the reading of it changes with the offset.</p>
+<pre><code>const key = propertime('20260612093101AM').toSortKey()
+key + ' stays in the row, a London reader sees ' + propertime(key, 'M9').toString()</code>
 <samp></samp></pre>
 
 <h3>Can I feed the string it gave me back in, or is it one-way?</h3>
 <p>For the modern civil line it is one way, and the failure is silent, the parser does not throw. The display line carries separators the compact parser never expects, the fields shear apart, and the result is a wrong value with a six-digit year and NaN in every time field. The example below feeds a display line straight back in.</p>
 <pre><code>propertime(propertime('20260612093101AM').toString()).toString()</code>
 <samp></samp></pre>
-<p>So never store or resend a display line, the two-way form is the wire stamp built from the fields, shown in the first answer of this chapter. There is one exception in the other direction. The canonical deep-time lines belong to the parser's own grammar, so for an ancient date the display line does round-trip exactly:</p>
+<p>So never store or resend a display line, the two-way form is the sort key from <code>toSortKey</code>. There is one exception in the other direction. The canonical deep-time lines belong to the parser's own grammar, so for an ancient date the display line does round-trip exactly:</p>
 <pre><code>const a = propertime('20000101000101AM A.C.')
 propertime(a.toString()).toString() === a.toString()</code>
 <samp></samp></pre>
@@ -635,8 +687,8 @@ msg</code>
 <p>No, although the parser itself forgives the padding and reads the same instant from a padded year:</p>
 <pre><code>propertime('020260612000101AM').toString() === propertime('20260612000101AM').toString()</code>
 <samp></samp></pre>
-<p>Yet the padded stamp sorts ahead of everything unpadded, here a November lands before a June, so an index built on the lined-up column returns the wrong order. Keep years unpadded, and for data of mixed year widths sort on the Julian Day Number as shown in the cases chapter.</p>
-<pre><code>['020261105000101AM', '20260612000101AM'].sort().join(' ')</code>
+<p>Yet the padded key sorts ahead of everything unpadded, here a November lands before a June, so an index built on the lined-up column returns the wrong order. Keep years unpadded, and for data of mixed year widths sort on the Julian Day Number as shown in the cases chapter.</p>
+<pre><code>['020261105A0001001', '20260612A0001001'].sort().join(' ')</code>
 <samp></samp></pre>
 </section>
 
@@ -930,7 +982,7 @@ $db->exec('COMMIT');</code></pre>
 <script src="time.js"></script>
 <script>
 if (typeof propertime === 'function') {
-  document.querySelectorAll('#examples pre, #cases pre, #database pre, #advice pre, #paq pre').forEach(function (p) {
+  document.querySelectorAll('#inputs pre, #methods pre, #helpers pre, #examples pre, #cases pre, #database pre, #advice pre, #paq pre').forEach(function (p) {
     var c = p.querySelector('code');
     var s = p.querySelector('samp');
     if (!c || !s) return;
@@ -1065,8 +1117,8 @@ if (typeof propertime === 'function') {
     } },
     { want: 'Serialization that survives the round trip', run: function () {
       var t = propertime('20260612093101AM');
-      var wire = t.year + t.month + t.day + t.hr + t.min + t.sec + t.ampm;
-      return { ok: propertime(wire).toString() === t.toString(), note: wire + ' parses back to an equal value' };
+      var key = t.toSortKey();
+      return { ok: propertime(key).toString() === t.toString(), note: key + ' parses back to an equal value' };
     } },
     { want: 'Calendar data ready for widgets', run: function () {
       var mon = propertime.getclndr(T, 'NATIVE')[5];
