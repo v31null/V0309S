@@ -2335,6 +2335,10 @@ const propertime = (function () {
 			return fieldsToSortKey(this);
 		}
 
+		getCivilDate() {
+			return fieldsToCivilDate(this);
+		}
+
 		DTP() {
 			let srcDrag = !!this.drag;
 			let jdn = ymdToJdn(this.year, parseInt(this.month), parseInt(this.day));
@@ -3297,6 +3301,21 @@ getMeta(is_he = false) {
 		}
 		return prevTag;
 	}
+
+	const CIVIL_DATE_STARTS = [[1125, 0], [1020, 9], [913, 8], [808, 7], [702, 6], [527, 5], [420, 4], [315, 3], [206, 2], [101, 1]];
+
+	function fieldsToCivilDate(p) {
+		let m = parseInt(p.month), d = parseInt(p.day);
+		if (m === 2 && d === 29) return 0;
+		let md = m * 100 + d;
+		for (let i = 0; i < CIVIL_DATE_STARTS.length; i++) {
+			if (md >= CIVIL_DATE_STARTS[i][0]) return CIVIL_DATE_STARTS[i][1];
+		}
+		throw new Error("Invalid date.");
+	}
+	ptFunc.getCivilDate = function (input) {
+		return fieldsToCivilDate((input && typeof input === 'object' && 'month' in input && 'day' in input) ? input : ptFunc(input));
+	};
 
 	function civilYear(p) {
 		let y = p.year;
