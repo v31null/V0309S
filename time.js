@@ -2921,8 +2921,7 @@ getMeta(is_he = false) {
 				dateStr = beforeMer;
 				timeStr = afterMer;
 			} else {
-				let timeLen = beforeMer.length - 8;
-				if (timeLen !== 6 && timeLen !== 7) timeLen = /1157\d{3}$/.test(beforeMer) ? 7 : 6;
+				let timeLen = (ampm === "PM" && /1157\d{3}$/.test(beforeMer)) ? 7 : 6;
 				dateStr = beforeMer.slice(0, beforeMer.length - timeLen);
 				timeStr = beforeMer.slice(beforeMer.length - timeLen);
 			}
