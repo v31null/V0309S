@@ -246,6 +246,27 @@ propertime({ STRING: '20260612000101AM' })</code></pre>
 <p>Returns the stamp form: year, month, day, <code>AM</code> or <code>PM</code>, then the time with a 2-digit second. From the 100th second of the leap minute the meridiem shrinks to one letter so that the 3-digit second fits into the same 16 characters. It parses back, it is fine for URLs, logs, and JSON, but it is not the database form, because that shrinking meridiem moves the fields and breaks string order, as <a href="#ordering">the ordering answer</a> shows.</p>
 <pre><code>propertime('20261014PM104033').toStorage() + ' ' + propertime('20261014P1157214').toStorage()</code>
 <samp></samp></pre>
+
+<h3><code>getCivilDate()</code></h3>
+<p>Returns an administrative date used for official purposes, a single digit from 0 to 9 naming which tenth of the year the day falls in. The 365 days are divided into ten civil months of 36 or 37 days, and the tenth month carries the digit 0. The call is one way, the digit names a span of days and not a day, so nothing parses it back.</p>
+<table>
+<thead><tr><th>Digit</th><th>Days</th></tr></thead>
+<tbody>
+<tr><td><code>1</code></td><td>January 1 to February 5</td></tr>
+<tr><td><code>2</code></td><td>February 6 to March 14</td></tr>
+<tr><td><code>3</code></td><td>March 15 to April 19</td></tr>
+<tr><td><code>4</code></td><td>April 20 to May 26</td></tr>
+<tr><td><code>5</code></td><td>May 27 to July 1</td></tr>
+<tr><td><code>6</code></td><td>July 2 to August 7</td></tr>
+<tr><td><code>7</code></td><td>August 8 to September 12</td></tr>
+<tr><td><code>8</code></td><td>September 13 to October 19</td></tr>
+<tr><td><code>9</code></td><td>October 20 to November 24</td></tr>
+<tr><td><code>0</code></td><td>November 25 to December 31, and February 29</td></tr>
+</tbody>
+</table>
+<p>February 29 is a legal fiction, it is counted as December 32, so a leap year leaves the first nine months untouched and its tenth month runs 38 days. The digit is read off the month and the day alone, so the era, the style tag, and the year do not move it.</p>
+<pre><code>[propertime('20261014PM104033').getCivilDate(), propertime('20240229A0001001').getCivilDate(), propertime('20260101A0001001').getCivilDate()].join(' ')</code>
+<samp></samp></pre>
 </section>
 
 <section id="helpers">
@@ -274,6 +295,11 @@ propertime({ STRING: '20260612000101AM' })</code></pre>
 <pre><code>propertime.diff('20261013A0002021', '20261014P1040033')</code>
 <samp></samp></pre>
 <pre><code>propertime.diff('20260101A0001001', '20270315P0501001', ['DAYS', 'HRS'])</code>
+<samp></samp></pre>
+
+<h3><code>propertime.getCivilDate(input)</code></h3>
+<p>The same as the method, called on a time value or on anything the parser reads, so a stamp goes in and a digit comes out without building the value first.</p>
+<pre><code>propertime.getCivilDate('20261014P1040033')</code>
 <samp></samp></pre>
 
 <h3><code>propertime.toSortKey(value)</code> and <code>propertime.toStorage(value)</code></h3>
